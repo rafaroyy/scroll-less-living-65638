@@ -1,0 +1,14 @@
+
+User-agent: *
+Allow: /
+
+# Performance optimization - crawl delay
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://sociallimits.com/sitemap.xml
+
+# Block unnecessary crawling
+Disallow: /api/
+Disallow: /_next/
+Disallow: /node_modules/
