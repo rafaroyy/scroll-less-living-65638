@@ -122,7 +122,9 @@ export const authService = {
   },
 
   isAuthenticated: (): boolean => {
-    return !!Cookies.get(TOKEN_COOKIE_NAME);
+    const hasToken = !!Cookies.get(TOKEN_COOKIE_NAME);
+    const hasUserInfo = !!localStorage.getItem(USER_INFO_KEY);
+    return hasToken || hasUserInfo;
   },
 
   getToken: (): string | undefined => {
