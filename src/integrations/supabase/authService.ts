@@ -1,5 +1,3 @@
-
-import { apiClient } from "@/integrations/supabase/client";
 import Cookies from "js-cookie";
 
 interface LoginParams {
@@ -26,35 +24,44 @@ const USER_INFO_KEY = "user_info";
 
 export const authService = {
   login: async ({ email, password }: LoginParams): Promise<SessionResponse> => {
+    // Mock login - aceita qualquer email/senha
     try {
-      const response = await apiClient.post<LoginResponse>(
-        "/auth/login",
-        { email, password },
-        { skipAuth: true }
-      );
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Store token in cookie (expires in hours returned by API)
-      Cookies.set(TOKEN_COOKIE_NAME, response.data.access_token, {
-        expires: response.data.expires_in_hours / 24, // Convert hours to days
-        secure: true, // Only send over HTTPS in production
+      // Gerar token mockado
+      const mockToken = `mock_token_${Date.now()}`;
+      const mockUserId = Math.floor(Math.random() * 10000);
+      const mockUsername = email.split('@')[0];
+      
+      // Store token in cookie (expires in 24 hours)
+      Cookies.set(TOKEN_COOKIE_NAME, mockToken, {
+        expires: 1, // 1 day
+        secure: true,
         sameSite: 'strict'
       });
 
       // Store user info in localStorage
       localStorage.setItem(USER_INFO_KEY, JSON.stringify({
-        user_id: response.data.user_id,
-        username: response.data.username,
+        user_id: mockUserId,
+        username: mockUsername,
       }));
 
       return {
         success: true,
-        message: "Login successful",
-        sessionData: response.data,
+        message: "Login realizado com sucesso",
+        sessionData: {
+          access_token: mockToken,
+          token_type: "Bearer",
+          user_id: mockUserId,
+          username: mockUsername,
+          expires_in_hours: 24,
+        },
       };
     } catch (error: any) {
       return {
         success: false,
-        message: error.response?.data?.message || "An error occurred during login",
+        message: "Erro ao fazer login",
       };
     }
   },
@@ -80,20 +87,27 @@ export const authService = {
   getSession: async (): Promise<SessionResponse> => {
     try {
       const token = Cookies.get(TOKEN_COOKIE_NAME);
+      const userInfo = localStorage.getItem(USER_INFO_KEY);
       
-      if (!token) {
+      if (!token || !userInfo) {
         return {
           success: false,
-          message: "No session found",
+          message: "Nenhuma sessão encontrada",
         };
       }
 
-      const response = await apiClient.get("/auth/me");
+      const userData = JSON.parse(userInfo);
       
       return {
         success: true,
-        message: "Session fetched successfully",
-        sessionData: response.data,
+        message: "Sessão recuperada com sucesso",
+        sessionData: {
+          access_token: token,
+          token_type: "Bearer",
+          user_id: userData.user_id,
+          username: userData.username,
+          expires_in_hours: 24,
+        },
       };
     } catch (error: any) {
       // If token is invalid, clear it
@@ -102,7 +116,7 @@ export const authService = {
       
       return {
         success: false,
-        message: error.response?.data?.message || "Failed to fetch session",
+        message: "Falha ao recuperar sessão",
       };
     }
   },

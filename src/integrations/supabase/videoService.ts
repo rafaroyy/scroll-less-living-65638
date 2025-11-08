@@ -1,4 +1,4 @@
-import { apiClient } from "@/integrations/supabase/client";
+import { apiClient } from "@/integrations/supabase/apiClient";
 
 interface VideoRequest {
   objetivo: string;

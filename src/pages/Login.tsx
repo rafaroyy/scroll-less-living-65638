@@ -4,16 +4,45 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SEO } from "@/components/SEO";
+import { authService } from "@/integrations/supabase/authService";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Por enquanto apenas redireciona para o editor
-    navigate("/editor");
+    setIsLoading(true);
+    
+    try {
+      const result = await authService.login({ email, password });
+      
+      if (result.success) {
+        toast({
+          title: "Sucesso!",
+          description: result.message,
+        });
+        navigate("/editor");
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao fazer login",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -89,9 +118,10 @@ export default function Login() {
 
             <Button
               type="submit"
+              disabled={isLoading}
               className="w-full bg-gradient-to-r from-brand-primary to-purple-600 hover:from-purple-600 hover:to-brand-primary text-white py-6 text-lg font-semibold font-poppins"
             >
-              Entrar
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
 
