@@ -1,10 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PopupDownload } from "@/components/PopupDownload";
-import { useAuth } from "@/integrations/auth0/useAuth";
 
 interface HeaderProps {
   activeSection?: string;
@@ -14,7 +13,6 @@ export const Header = ({ activeSection = "home" }: HeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -111,31 +109,15 @@ export const Header = ({ activeSection = "home" }: HeaderProps) => {
             ))}
           </nav>
 
-          {/* User Info & CTA */}
-          <div className="hidden md:flex items-center gap-4 animate-[fade-in_1s_ease-out]">
-            {isAuthenticated ? (
-              <>
-                <span className="text-sm font-medium text-foreground">
-                  {user?.name || user?.email}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={logout}
-                  className="gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sair
-                </Button>
-              </>
-            ) : (
+          {/* CTA Button */}
+          <div className="hidden md:block animate-[fade-in_1s_ease-out]">
+            <Link to="/login">
               <Button 
-                className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white font-semibold px-6 py-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                onClick={() => setIsDialogOpen(true)}
+                className="bg-gradient-to-r from-brand-primary to-blue-600 hover:from-blue-600 hover:to-brand-primary text-white px-6 py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:scale-105 font-poppins"
               >
-                Baixar Agora
+                Começar agora
               </Button>
-            )}
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -178,29 +160,13 @@ export const Header = ({ activeSection = "home" }: HeaderProps) => {
                 )
               ))}
               <div className="px-4">
-                {isAuthenticated ? (
-                  <Button 
-                    className="w-full gap-2"
-                    variant="outline"
-                    onClick={() => {
-                      logout();
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sair
-                  </Button>
-                ) : (
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button 
                     className="bg-gradient-to-r from-brand-primary to-blue-600 hover:from-blue-600 hover:to-brand-primary text-white px-6 py-2 rounded-lg mt-4 w-full font-poppins"
-                    onClick={() => {
-                      setIsDialogOpen(true);
-                      setIsMobileMenuOpen(false);
-                    }}
                   >
-                    Baixar Agora
+                    Começar agora
                   </Button>
-                )}
+                </Link>
               </div>
             </nav>
           </div>
