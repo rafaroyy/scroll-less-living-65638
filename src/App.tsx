@@ -4,61 +4,38 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { PublicRoute } from "@/components/PublicRoute";
 import Index from "./pages/Index";
-import OurStory from "./pages/OurStory";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Blog from "./pages/Blog";
-import DownloadApp from "./pages/DownloadApp";
+import Auth from "./pages/Auth";
 import Editor from "./pages/Editor";
 import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
+import { ProtectedRoute } from "./integrations/auth0/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <HelmetProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public Routes */}
             <Route path="/" element={<Index />} />
-            <Route path="/our-story" element={<OurStory />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/download-app" element={<DownloadApp />} />
-            
-            {/* Auth Route - Redirects to /editor if already logged in */}
-            <Route 
-              path="/login" 
-              element={
-                <PublicRoute>
-                  <Auth />
-                </PublicRoute>
-              } 
-            />
-            
-            {/* Protected Routes */}
-            <Route 
-              path="/editor" 
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/editor"
               element={
                 <ProtectedRoute>
                   <Editor />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
-            {/* Catch-all Route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </HelmetProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
