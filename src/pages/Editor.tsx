@@ -5,8 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { videoService } from "@/integrations/supabase/videoService";
-import { authService } from "@/integrations/supabase/authService";
+import { videoService } from "@/integrations/videoService";
+import { useAuth } from "@/integrations/auth0/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Loader2, LogOut, Video, Download, Trash2, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +40,7 @@ export default function Editor() {
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const userInfo = authService.getUserInfo();
+  const { user, logout } = useAuth();
 
   // Load existing videos on mount
   useEffect(() => {
@@ -109,13 +109,8 @@ export default function Editor() {
   }
 };
 
-  const handleLogout = async () => {
-    await authService.logout();
-    toast({
-      title: "Logout realizado",
-      description: "Até logo!",
-    });
-    navigate("/login");
+  const handleLogout = () => {
+    logout();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,7 +140,7 @@ export default function Editor() {
         status: result.status,
         progress: null,
         message: result.message,
-        created_at: result.created_at
+        created_at: new Date().toISOString()
       };
       setJobs([newJob, ...jobs]);
 
@@ -215,7 +210,7 @@ export default function Editor() {
           } else {
             toast({
               title: "Erro no processamento",
-              description: status.error || "Falha ao processar vídeo",
+              description: status.message || "Falha ao processar vídeo",
               variant: "destructive",
             });
           }
