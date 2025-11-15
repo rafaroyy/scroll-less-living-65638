@@ -111,7 +111,7 @@ export const Header = ({ activeSection = "home" }: HeaderProps) => {
 
           {/* CTA Button */}
           <div className="hidden md:block animate-[fade-in_1s_ease-out]">
-            <Link to="/login">
+            <Link to="/auth">
               <Button 
                 className="bg-gradient-to-r from-brand-primary to-blue-600 hover:from-blue-600 hover:to-brand-primary text-white px-6 py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:scale-105 font-poppins"
               >
@@ -160,7 +160,7 @@ export const Header = ({ activeSection = "home" }: HeaderProps) => {
                 )
               ))}
               <div className="px-4">
-                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button 
                     className="bg-gradient-to-r from-brand-primary to-blue-600 hover:from-blue-600 hover:to-brand-primary text-white px-6 py-2 rounded-lg mt-4 w-full font-poppins"
                   >

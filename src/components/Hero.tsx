@@ -31,7 +31,7 @@ export const Hero = () => {
           
           {/* CTA Button */}
           <div className="flex justify-start mb-8 animate-[fade-in_1.4s_ease-out]">
-            <Link to="/login">
+            <Link to="/auth">
               <Button className="bg-gradient-to-r from-brand-primary to-blue-600 hover:from-blue-600 hover:to-brand-primary text-white px-12 py-6 rounded-full text-xl font-semibold transition-all duration-300 hover:shadow-xl hover:scale-105 font-poppins">
                 Começar agora
               </Button>
@@ -102,7 +102,7 @@ export const Hero = () => {
                 
                 {/* CTA Button */}
                 <div className="flex justify-start mb-8 animate-[fade-in_1.4s_ease-out]">
-                  <Link to="/login">
+                  <Link to="/auth">
                     <Button className="bg-gradient-to-r from-brand-primary to-blue-600 hover:from-blue-600 hover:to-brand-primary text-white px-12 py-6 rounded-full text-xl font-semibold transition-all duration-300 hover:shadow-xl hover:scale-105 font-poppins">
                       Começar agora
                     </Button>
