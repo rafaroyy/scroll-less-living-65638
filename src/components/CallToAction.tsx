@@ -35,7 +35,7 @@ export const CallToAction = () => {
           <p className={`text-xl text-brand-light mb-8 leading-relaxed font-poppins font-light transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>Assine por R$97/mês e tenha acesso ao cérebro de quem vive de vídeos virais.</p>
           
           <div className={`flex justify-center items-center mb-12 transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95'}`}>
-            <Link to="/login">
+            <Link to="/auth">
               <Button className="bg-gradient-to-r from-brand-primary via-blue-500 to-purple-600 hover:from-purple-600 hover:via-blue-500 hover:to-brand-primary text-white px-8 py-4 rounded-lg text-lg font-medium transition-all duration-300 hover:shadow-xl hover:scale-105 font-poppins">
                 Começar agora
               </Button>
