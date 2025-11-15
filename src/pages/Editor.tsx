@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,74 +40,84 @@ export default function Editor() {
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const userInfo = authService.getUserInfo();
+  const intervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
-  // Load existing videos on mount
+  // Carrega o username do usuário
   useEffect(() => {
-    loadUserVideos();
+    const info = authService.getUserInfo();
+    setUsername(info?.name || info?.username || info?.email || "Usuário");
+  }, []);
+
+  // Carrega vídeos existentes ao montar
+  useEffect(() => {
+    setTimeout(() => {
+      loadUserVideos();
+    }, 150);
+  }, []);
+
+  // Cleanup dos intervals ao desmontar
+  useEffect(() => {
+    return () => {
+      intervalsRef.current.forEach((interval) => clearInterval(interval));
+      intervalsRef.current.clear();
+    };
   }, []);
 
   const loadUserVideos = async () => {
-  setLoadingVideos(true); // Exibe um spinner enquanto carrega
-  try {
-    const videos = await videoService.listVideos();
+    setLoadingVideos(true);
+    try {
+      const videos = await videoService.listVideos();
 
-    // Verifica que recebemos um array válido
-    if (!Array.isArray(videos)) {
-      console.error("Os vídeos retornados do backend não são um array:", videos);
-      setJobs([]); // Garante que não ficará com vídeos inválidos
-      return;
-    }
-
-    // Inicializa os jobs detalhados com as informações completas do backend
-    const detailedJobs = await Promise.all(
-      videos.map(async (video) => {
-        try {
-          // Busca status detalhado para cada vídeo da lista
-          const status = await videoService.getJobStatus(video.job_id);
-          return {
-            job_id: status.job_id,
-            status: status.status,
-            progress: status.progress,
-            message: status.message,
-            created_at: status.created_at,
-            updated_at: status.updated_at
-          };
-        } catch (error) {
-          console.warn(`Falha ao buscar status do vídeo ${video.job_id}, utilizando dados básicos.`);
-          // Usa dados básicos do vídeo se o status detalhado não estiver disponível
-          return {
-            job_id: video.job_id,
-            status: video.status,
-            progress: null,
-            message: null,
-            created_at: video.created_at,
-            updated_at: video.updated_at
-          };
-        }
-      })
-    );
-
-    // Atualiza o estado com os vídeos detalhados
-    setJobs(detailedJobs);
-
-    // Inicia o polling para vídeos em processamento ou pendentes
-    detailedJobs.forEach((job) => {
-      if (job.status === "pending" || job.status === "processing") {
-        pollJobStatus(job.job_id);
+      if (!Array.isArray(videos)) {
+        console.error("Os vídeos retornados do backend não são um array:", videos);
+        setJobs([]);
+        return;
       }
-    });
-  } catch (error: any) {
-    toast({
-      title: "Erro ao carregar vídeos",
-      description: error.message || "Erro inesperado ao buscar vídeos",
-      variant: "destructive",
-    });
-    console.error("Erro ao carregar vídeos: ", error);
-  } finally {
-    setLoadingVideos(false); // Esconde o spinner
-  }
-};
+
+      const detailedJobs = await Promise.all(
+        videos.map(async (video) => {
+          try {
+            const status = await videoService.getJobStatus(video.job_id);
+            return {
+              job_id: status.job_id,
+              status: status.status,
+              progress: status.progress,
+              message: status.message,
+              created_at: status.created_at,
+              updated_at: status.updated_at
+            };
+          } catch (error) {
+            console.warn(`Falha ao buscar status do vídeo ${video.job_id}, utilizando dados básicos.`);
+            return {
+              job_id: video.job_id,
+              status: video.status,
+              progress: null,
+              message: null,
+              created_at: video.created_at,
+              updated_at: video.updated_at
+            };
+          }
+        })
+      );
+
+      setJobs(detailedJobs);
+
+      detailedJobs.forEach((job) => {
+        if (job.status === "pending" || job.status === "processing") {
+          pollJobStatus(job.job_id);
+        }
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar vídeos",
+        description: error.message || "Erro inesperado ao buscar vídeos",
+        variant: "destructive",
+      });
+      console.error("Erro ao carregar vídeos: ", error);
+    } finally {
+      setLoadingVideos(false);
+    }
+  };
 
   const handleLogout = async () => {
     await authService.logout();
@@ -115,7 +125,7 @@ export default function Editor() {
       title: "Logout realizado",
       description: "Até logo!",
     });
-    navigate("/login");
+    navigate("/auth");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,54 +141,58 @@ export default function Editor() {
     }
 
     setLoading(true);
-    try {
-      const result = await videoService.renderVideo(formData);
+    
+    setTimeout(async () => {
+      try {
+        const result = await videoService.renderVideo(formData);
 
-      toast({
-        title: "Vídeo em processamento!",
-        description: `Job ID: ${result.job_id}`,
-      });
+        toast({
+          title: "Vídeo em processamento!",
+          description: `Job ID: ${result.job_id}`,
+        });
 
-      // Add job to list
-      const newJob = {
-        job_id: result.job_id,
-        status: result.status,
-        progress: null,
-        message: result.message,
-        created_at: result.created_at
-      };
-      setJobs([newJob, ...jobs]);
+        const newJob = {
+          job_id: result.job_id,
+          status: result.status,
+          progress: null,
+          message: result.message,
+          created_at: result.created_at
+        };
+        setJobs([newJob, ...jobs]);
 
-      // Reset form
-      setFormData({
-        objetivo: "",
-        tema: "",
-        nicho: "",
-        palavra_chave_global: "",
-        idioma: "pt-BR",
-        duracao: 30,
-        cenas: 5,
-        aspect_ratio: "9:16"
-      });
+        setFormData({
+          objetivo: "",
+          tema: "",
+          nicho: "",
+          palavra_chave_global: "",
+          idioma: "pt-BR",
+          duracao: 30,
+          cenas: 5,
+          aspect_ratio: "9:16"
+        });
 
-      // Start polling for status
-      pollJobStatus(result.job_id);
-    } catch (error: any) {
-      toast({
-        title: "Erro ao criar vídeo",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+        pollJobStatus(result.job_id);
+      } catch (error: any) {
+        toast({
+          title: "Erro ao criar vídeo",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }, 10);
   };
 
   const pollJobStatus = async (jobId: string) => {
-    // Prevent duplicate polling
     if (activePolls.has(jobId)) return;
 
-    setActivePolls(prev => new Set(prev).add(jobId));
+    setActivePolls(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) return prev;
+      newSet.add(jobId);
+      return newSet;
+    });
 
     const interval = setInterval(async () => {
       try {
@@ -198,9 +212,13 @@ export default function Editor() {
           )
         );
 
-        // Stop polling if completed or failed
         if (status.status === "completed" || status.status === "failed") {
-          clearInterval(interval);
+          const intervalToRemove = intervalsRef.current.get(jobId);
+          if (intervalToRemove) {
+            clearInterval(intervalToRemove);
+            intervalsRef.current.delete(jobId);
+          }
+          
           setActivePolls(prev => {
             const newSet = new Set(prev);
             newSet.delete(jobId);
@@ -221,14 +239,21 @@ export default function Editor() {
           }
         }
       } catch (error) {
-        clearInterval(interval);
+        const intervalToRemove = intervalsRef.current.get(jobId);
+        if (intervalToRemove) {
+          clearInterval(intervalToRemove);
+          intervalsRef.current.delete(jobId);
+        }
+        
         setActivePolls(prev => {
           const newSet = new Set(prev);
           newSet.delete(jobId);
           return newSet;
         });
       }
-    }, 5000); // Poll every 5 seconds
+    }, 5000);
+
+    intervalsRef.current.set(jobId, interval);
   };
 
   const handleDownload = async (jobId: string) => {
@@ -378,7 +403,7 @@ export default function Editor() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              Olá, <strong>{username || "Carregando..."}</strong>
+              Olá, <strong>{username}</strong>
             </span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
