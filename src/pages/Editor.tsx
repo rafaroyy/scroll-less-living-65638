@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { videoService } from "@/integrations/supabase/videoService";
 import { authService } from "@/integrations/supabase/authService";
 import { useNavigate } from "react-router-dom";
-import { Loader2, LogOut, Video, Download, Trash2, Settings } from "lucide-react";
+import { Loader2, LogOut, Video, Download, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 
 // --- INTERFACE ------------------------------------------------------
 interface VideoJob {
@@ -47,19 +48,38 @@ export default function Editor() {
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const userInfo = authService.getUserInfo();
+
+  // ===================================================================
+  //   🔧 CARREGAR NOME DO USUÁRIO
+  // ===================================================================
+
+  useEffect(() => {
+    const info = authService.getUserInfo();
+    setUsername(info?.name || info?.email || "Usuário");
+  }, []);
 
   // ===================================================================
   //   🔧 CARREGAMENTO INICIAL — SEM TRAVAR A TELA
   // ===================================================================
 
   useEffect(() => {
-    // 💡 Dá tempo da UI renderizar antes das chamadas pesadas
     const timeout = setTimeout(() => {
       loadUserVideos();
     }, 150);
 
     return () => clearTimeout(timeout);
+  }, []);
+
+  // ===================================================================
+  //   🔧 CLEANUP DOS INTERVALS NO UNMOUNT
+  // ===================================================================
+
+  useEffect(() => {
+    const intervalsMap = new Map<string, NodeJS.Timeout>();
+
+    return () => {
+      intervalsMap.forEach((interval) => clearInterval(interval));
+    };
   }, []);
 
   const loadUserVideos = async () => {
@@ -127,7 +147,7 @@ export default function Editor() {
       title: "Logout realizado",
       description: "Até logo!",
     });
-    navigate("/login");
+    navigate("/auth");
   };
 
   // ===================================================================
@@ -146,8 +166,6 @@ export default function Editor() {
       return;
     }
 
-    // 🟢 MUITO IMPORTANTE:
-    // Permite que o React mostre o loading ANTES de começar a operação pesada.
     setLoading(true);
 
     setTimeout(async () => {
@@ -300,12 +318,77 @@ export default function Editor() {
   //   🔧 RENDERIZAÇÃO DO COMPONENTE
   // ===================================================================
 
+  // ===================================================================
+  //   🔧 RENDERIZAR CARD DE JOB
+  // ===================================================================
+
+  const renderJobCard = (job: VideoJob) => {
+    const statusVariant = {
+      completed: "default",
+      failed: "destructive",
+      pending: "secondary",
+      processing: "secondary",
+    }[job.status] as "default" | "destructive" | "secondary";
+
+    return (
+      <Card key={job.job_id} className="overflow-hidden">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-mono">{job.job_id}</CardTitle>
+            <Badge variant={statusVariant}>{job.status}</Badge>
+          </div>
+          {job.message && (
+            <CardDescription className="text-xs">{job.message}</CardDescription>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {job.progress !== null && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Progresso</span>
+                <span>{job.progress}%</span>
+              </div>
+              <Progress value={job.progress} className="h-2" />
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            {job.status === "completed" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleDownload(job.job_id)}
+                className="flex-1"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleDelete(job.job_id)}
+              className={job.status === "completed" ? "" : "flex-1"}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Deletar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // ===================================================================
+  //   🔧 FILTROS DE JOBS
+  // ===================================================================
+
   const completedJobs = jobs.filter((j) => j.status === "completed");
   const processingJobs = jobs.filter((j) => ["pending", "processing"].includes(j.status));
   const failedJobs = jobs.filter((j) => j.status === "failed");
 
   // ===================================================================
-  // UI PRINCIPAL — SEM ALTERAÇÃO VISUAL
+  // UI PRINCIPAL
   // ===================================================================
 
   return (
@@ -319,7 +402,7 @@ export default function Editor() {
 
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              Olá, <strong>{username || "Carregando..."}</strong>
+              Olá, <strong>{username}</strong>
             </span>
 
             <Button variant="outline" size="sm" onClick={handleLogout}>
