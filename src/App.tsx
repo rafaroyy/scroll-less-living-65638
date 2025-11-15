@@ -34,7 +34,7 @@ const App = () => (
             
             {/* Auth Route - Redirects to /editor if already logged in */}
             <Route 
-              path="/login" 
+              path="/auth" 
               element={
                 <PublicRoute>
                   <Auth />
