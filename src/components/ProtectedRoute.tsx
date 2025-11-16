@@ -1,40 +1,23 @@
 import { Navigate } from "react-router-dom";
-import { authService } from "@/integrations/supabase/authService";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [checkCount, setCheckCount] = useState(0);
+  const { isAuthenticated, authReady } = useAuth();
 
-  useEffect(() => {
-    // Check authentication status multiple times to catch async updates
-    const checkAuth = () => {
-      const authenticated = authService.isAuthenticated();
-      console.log("PROTECTED ROUTE - checkAuth:", { authenticated, checkCount });
-      setIsAuthenticated(authenticated);
-    };
-    
-    // Initial check
-    checkAuth();
-    
-    // Recheck after a short delay to catch cookie/localStorage updates
-    const timer = setTimeout(() => {
-      checkAuth();
-      setCheckCount(c => c + 1);
-    }, 100);
+  console.log("PROTECTED ROUTE - render:", { isAuthenticated, authReady });
 
-    return () => clearTimeout(timer);
-  }, [checkCount]);
-
-  console.log("PROTECTED ROUTE - render:", { isAuthenticated, checkCount });
-
-  // Show nothing while checking auth (only on first check)
-  if (isAuthenticated === null && checkCount === 0) {
-    return null;
+  // Wait for auth to be ready
+  if (!authReady) {
+    console.log("PROTECTED ROUTE - waiting for auth to be ready");
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -42,5 +25,6 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/auth" replace />;
   }
 
+  console.log("PROTECTED ROUTE - authenticated, rendering children");
   return <>{children}</>;
 };
