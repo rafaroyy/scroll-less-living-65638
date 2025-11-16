@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { videoService } from "@/integrations/supabase/videoService";
-import { authService } from "@/integrations/supabase/authService";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Loader2, LogOut, Video, Download, Trash2, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -40,13 +40,13 @@ export default function Editor() {
 
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { userInfo, logout } = useAuth();
   const intervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Carrega o username do usuário
   useEffect(() => {
-    const info = authService.getUserInfo();
-    setUsername(info?.name || info?.username || info?.email || "Usuário");
-  }, []);
+    setUsername(userInfo?.username || userInfo?.email || "Usuário");
+  }, [userInfo]);
 
   // Carrega vídeos existentes ao montar
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function Editor() {
   };
 
   const handleLogout = async () => {
-    await authService.logout();
+    await logout();
     toast({
       title: "Logout realizado",
       description: "Até logo!",

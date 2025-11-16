@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService } from "@/integrations/supabase/authService";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ export default function Auth() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const validateForm = () => {
     try {
@@ -47,11 +48,10 @@ export default function Auth() {
     if (!validateForm()) return;
 
     setLoading(true);
+    console.log("AUTH PAGE - Starting login");
+
     try {
-      const result = await authService.login({
-        email: formData.email.trim(),
-        password: formData.password,
-      });
+      const result = await login(formData.email.trim(), formData.password);
 
       if (!result.success) {
         toast({
@@ -63,32 +63,19 @@ export default function Auth() {
         return;
       }
 
-      const { sessionData } = result;
-
-      if (sessionData?.access_token) {
-        console.log("AUTH PAGE - Login successful, checking auth status...");
-        
-        // Verify auth is saved before redirecting
-        const isAuthNow = authService.isAuthenticated();
-        console.log("AUTH PAGE - isAuthenticated after login:", isAuthNow);
-        
-        toast({
-          title: "Login realizado!",
-          description: `Bem-vindo de volta, ${sessionData.username}!`,
-        });
-        
-        setFormData({ email: "", password: "" });
-        
-        // Small delay to ensure state is fully updated
-        setTimeout(() => {
-          console.log("AUTH PAGE - Redirecting to /editor");
-          window.location.replace("/editor");
-        }, 300);
-      } else {
-        setLoading(false);
-      }
+      console.log("AUTH PAGE - Login successful, updating UI");
+      
+      toast({
+        title: "Login realizado!",
+        description: "Bem-vindo de volta!",
+      });
+      
+      setFormData({ email: "", password: "" });
+      
+      console.log("AUTH PAGE - Redirecting to /editor");
+      navigate("/editor");
     } catch (error) {
-      console.error("Erro no login:", error);
+      console.error("AUTH PAGE - Error during login:", error);
       toast({
         title: "Erro inesperado",
         description: "Ocorreu um erro ao fazer login. Tente novamente.",
