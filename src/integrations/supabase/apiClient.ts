@@ -1,10 +1,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
+import { API_URL } from "@/config/apiConfig";
 
 const TOKEN_COOKIE_NAME = "auth_token";
-
-// Configuração base da API (mock)
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 interface ApiClientConfig extends AxiosRequestConfig {
   skipAuth?: boolean;
@@ -15,7 +13,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: API_URL,
       headers: {
         "Content-Type": "application/json",
       },
