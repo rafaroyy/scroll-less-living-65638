@@ -124,7 +124,8 @@ export const authService = {
   isAuthenticated: (): boolean => {
     const hasToken = !!Cookies.get(TOKEN_COOKIE_NAME);
     const hasUserInfo = !!localStorage.getItem(USER_INFO_KEY);
-    return hasToken || hasUserInfo;
+    // Ambos devem existir para considerar autenticado
+    return hasToken && hasUserInfo;
   },
 
   getToken: (): string | undefined => {

@@ -39,20 +39,40 @@ interface VideoListItem {
 export const videoService = {
   // Criar um novo vídeo
   renderVideo: async (params: VideoRequest): Promise<JobResponse> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    
     try {
-      const response = await apiClient.post<JobResponse>("/videos/render", params);
+      const response = await apiClient.post<JobResponse>("/videos/render", params, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       return response.data;
     } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+        throw new Error("Tempo limite excedido. O servidor pode estar ocupado.");
+      }
       throw new Error(error.response?.data?.message || "Erro ao criar vídeo");
     }
   },
 
   // Verificar status do job
   getJobStatus: async (jobId: string): Promise<JobStatusResponse> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    
     try {
-      const response = await apiClient.get<JobStatusResponse>(`/videos/status/${jobId}`);
+      const response = await apiClient.get<JobStatusResponse>(`/videos/status/${jobId}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       return response.data;
     } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+        throw new Error("Tempo limite excedido ao verificar status");
+      }
       throw new Error(error.response?.data?.message || "Erro ao buscar status do vídeo");
     }
   },
