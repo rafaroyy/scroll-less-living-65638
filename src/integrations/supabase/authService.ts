@@ -24,15 +24,15 @@ const USER_INFO_KEY = "user_info";
 
 export const authService = {
   login: async ({ email, password }: LoginParams): Promise<SessionResponse> => {
-    const API_URL = import.meta.env.VITE_API_URL || "https://www.viralizeia.com";
-    const loginURL = `${API_URL}/api/login`;
+    const API_URL = import.meta.env.VITE_API_URL || "https://api.viralizeia.com:8443";
+    const loginURL = `${API_URL}/auth/login`;
     const payload = { email, password };
     
     console.log("═══════════════════════════════════════════════════════");
     console.log("🔐 AUTH SERVICE - INICIANDO LOGIN");
     console.log("═══════════════════════════════════════════════════════");
     console.log("📍 URL BASE:", API_URL);
-    console.log("📍 ENDPOINT:", "/api/login");
+    console.log("📍 ENDPOINT:", "/auth/login");
     console.log("📍 URL COMPLETA:", loginURL);
     console.log("📍 MÉTODO:", "POST");
     console.log("📦 PAYLOAD:", JSON.stringify(payload, null, 2));

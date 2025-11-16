@@ -47,14 +47,14 @@ export const videoService = {
     console.log("🎬 VIDEO SERVICE - INICIANDO RENDER VIDEO");
     console.log("═══════════════════════════════════════════════════════");
     console.log("📍 URL BASE:", API_URL);
-    console.log("📍 ENDPOINT:", "/api/render");
-    console.log("📍 URL COMPLETA:", `${API_URL}/api/render`);
+    console.log("📍 ENDPOINT:", "/videos/render");
+    console.log("📍 URL COMPLETA:", `${API_URL}/videos/render`);
     console.log("📍 MÉTODO:", "POST");
     console.log("📦 PAYLOAD ENVIADO:", JSON.stringify(params, null, 2));
     console.log("═══════════════════════════════════════════════════════");
     
     try {
-      const response = await apiClient.post<JobResponse>("/api/render", params, {
+      const response = await apiClient.post<JobResponse>("/videos/render", params, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -104,7 +104,7 @@ export const videoService = {
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
     
     try {
-      const response = await apiClient.get<JobStatusResponse>(`/api/status/${jobId}`, {
+      const response = await apiClient.get<JobStatusResponse>(`/videos/status/${jobId}`, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -121,7 +121,7 @@ export const videoService = {
   // Baixar vídeo
   downloadVideo: async (jobId: string): Promise<Blob> => {
     try {
-      const response = await apiClient.get(`/api/download/${jobId}`, {
+      const response = await apiClient.get(`/videos/download/${jobId}`, {
         responseType: 'blob'
       });
       return response.data;
@@ -133,7 +133,7 @@ export const videoService = {
   // Listar vídeos do usuário
   listVideos: async (skip: number = 0, limit: number = 100): Promise<VideoListItem[]> => {
     try {
-      const response = await apiClient.get<{ items: VideoListItem[] }>("/api/videos/list", {
+      const response = await apiClient.get<{ items: VideoListItem[] }>("/videos/list", {
         params: { skip, limit },
       });
 
@@ -167,7 +167,7 @@ export const videoService = {
   // Deletar vídeo
   deleteVideo: async (jobId: string): Promise<void> => {
     try {
-      await apiClient.delete(`/api/videos/${jobId}`);
+      await apiClient.delete(`/videos/${jobId}`);
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Erro ao deletar vídeo");
     }
