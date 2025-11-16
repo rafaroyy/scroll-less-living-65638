@@ -19,6 +19,7 @@ class ApiClient {
       headers: {
         "Content-Type": "application/json",
       },
+      timeout: 30000, // 30s default timeout
     });
 
     // Interceptor para adicionar token de autenticação

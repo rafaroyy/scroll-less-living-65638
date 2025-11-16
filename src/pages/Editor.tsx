@@ -142,46 +142,45 @@ export default function Editor() {
 
     setLoading(true);
     
-    setTimeout(async () => {
-      try {
-        const result = await videoService.renderVideo(formData);
+    try {
+      const result = await videoService.renderVideo(formData);
 
-        toast({
-          title: "Vídeo em processamento!",
-          description: `Job ID: ${result.job_id}`,
-        });
+      toast({
+        title: "Vídeo em processamento!",
+        description: `Job ID: ${result.job_id}`,
+      });
 
-        const newJob = {
-          job_id: result.job_id,
-          status: result.status,
-          progress: null,
-          message: result.message,
-          created_at: result.created_at
-        };
-        setJobs([newJob, ...jobs]);
+      const newJob = {
+        job_id: result.job_id,
+        status: result.status,
+        progress: null,
+        message: result.message,
+        created_at: result.created_at
+      };
+      setJobs([newJob, ...jobs]);
 
-        setFormData({
-          objetivo: "",
-          tema: "",
-          nicho: "",
-          palavra_chave_global: "",
-          idioma: "pt-BR",
-          duracao: 30,
-          cenas: 5,
-          aspect_ratio: "9:16"
-        });
+      setFormData({
+        objetivo: "",
+        tema: "",
+        nicho: "",
+        palavra_chave_global: "",
+        idioma: "pt-BR",
+        duracao: 30,
+        cenas: 5,
+        aspect_ratio: "9:16"
+      });
 
-        pollJobStatus(result.job_id);
-      } catch (error: any) {
-        toast({
-          title: "Erro ao criar vídeo",
-          description: error.message,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }, 10);
+      pollJobStatus(result.job_id);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar vídeo",
+        description: error.message || "Tempo limite excedido. Tente novamente.",
+        variant: "destructive",
+      });
+      console.error("Erro ao criar vídeo:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const pollJobStatus = async (jobId: string) => {
