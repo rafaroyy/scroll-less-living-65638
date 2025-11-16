@@ -66,6 +66,12 @@ export default function Auth() {
       const { sessionData } = result;
 
       if (sessionData?.access_token) {
+        console.log("AUTH PAGE - Login successful, checking auth status...");
+        
+        // Verify auth is saved before redirecting
+        const isAuthNow = authService.isAuthenticated();
+        console.log("AUTH PAGE - isAuthenticated after login:", isAuthNow);
+        
         toast({
           title: "Login realizado!",
           description: `Bem-vindo de volta, ${sessionData.username}!`,
@@ -73,8 +79,11 @@ export default function Auth() {
         
         setFormData({ email: "", password: "" });
         
-        // Redirect immediately without waiting for state updates
-        window.location.replace("/editor");
+        // Small delay to ensure state is fully updated
+        setTimeout(() => {
+          console.log("AUTH PAGE - Redirecting to /editor");
+          window.location.replace("/editor");
+        }, 300);
       } else {
         setLoading(false);
       }
