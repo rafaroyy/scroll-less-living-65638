@@ -72,8 +72,8 @@ export default function Auth() {
         
         setFormData({ email: "", password: "" });
         
-        // Redirect to editor
-        navigate("/editor", { replace: true });
+        // Force redirect with window.location to ensure clean state
+        window.location.href = "/editor";
       }
     } catch (error) {
       toast({
