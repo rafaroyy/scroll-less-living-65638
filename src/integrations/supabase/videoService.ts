@@ -1,4 +1,5 @@
 import { apiClient } from "@/integrations/supabase/apiClient";
+import { API_URL } from "@/config/apiConfig";
 
 interface VideoRequest {
   objetivo: string;
@@ -42,14 +43,30 @@ export const videoService = {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
     
+    console.log("🎬 VIDEO SERVICE - Iniciando renderVideo:", {
+      endpoint: "/api/render",
+      params,
+      baseURL: API_URL
+    });
+    
     try {
-      const response = await apiClient.post<JobResponse>("/videos/render", params, {
+      const response = await apiClient.post<JobResponse>("/api/render", params, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
+      
+      console.log("✅ VIDEO SERVICE - Vídeo criado com sucesso:", response.data);
       return response.data;
     } catch (error: any) {
       clearTimeout(timeoutId);
+      
+      console.error("❌ VIDEO SERVICE - Erro ao criar vídeo:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
       if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
         throw new Error("Tempo limite excedido. O servidor pode estar ocupado.");
       }
@@ -63,7 +80,7 @@ export const videoService = {
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
     
     try {
-      const response = await apiClient.get<JobStatusResponse>(`/videos/status/${jobId}`, {
+      const response = await apiClient.get<JobStatusResponse>(`/api/status/${jobId}`, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -80,7 +97,7 @@ export const videoService = {
   // Baixar vídeo
   downloadVideo: async (jobId: string): Promise<Blob> => {
     try {
-      const response = await apiClient.get(`/videos/download/${jobId}`, {
+      const response = await apiClient.get(`/api/download/${jobId}`, {
         responseType: 'blob'
       });
       return response.data;
@@ -92,7 +109,7 @@ export const videoService = {
   // Listar vídeos do usuário
   listVideos: async (skip: number = 0, limit: number = 100): Promise<VideoListItem[]> => {
     try {
-      const response = await apiClient.get<{ items: VideoListItem[] }>("/videos/list", {
+      const response = await apiClient.get<{ items: VideoListItem[] }>("/api/videos/list", {
         params: { skip, limit },
       });
 
@@ -126,7 +143,7 @@ export const videoService = {
   // Deletar vídeo
   deleteVideo: async (jobId: string): Promise<void> => {
     try {
-      await apiClient.delete(`/videos/${jobId}`);
+      await apiClient.delete(`/api/videos/${jobId}`);
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Erro ao deletar vídeo");
     }

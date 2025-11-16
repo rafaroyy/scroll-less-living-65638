@@ -24,55 +24,54 @@ const USER_INFO_KEY = "user_info";
 
 export const authService = {
   login: async ({ email, password }: LoginParams): Promise<SessionResponse> => {
-    // Mock login - aceita qualquer email/senha
     try {
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const API_URL = import.meta.env.VITE_API_URL || "https://www.viralizeia.com";
       
-      // Gerar token mockado
-      const mockToken = `mock_token_${Date.now()}`;
-      const mockUserId = Math.floor(Math.random() * 10000);
-      const mockUsername = email.split('@')[0];
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || errorData.message || 'Erro ao fazer login');
+      }
+
+      const data: LoginResponse = await response.json();
       
       // Store token in cookie (expires in 24 hours)
-      Cookies.set(TOKEN_COOKIE_NAME, mockToken, {
+      Cookies.set(TOKEN_COOKIE_NAME, data.access_token, {
         expires: 1, // 1 day
-        secure: false, // Changed to false for local development
-        sameSite: 'lax' // Changed to lax for better compatibility
+        secure: window.location.protocol === 'https:',
+        sameSite: 'lax'
       });
 
       // Store user info in localStorage
       const userInfo = {
-        user_id: mockUserId,
-        username: mockUsername,
+        user_id: data.user_id,
+        username: data.username,
       };
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
 
-      // Verify data was saved immediately
-      const savedToken = Cookies.get(TOKEN_COOKIE_NAME);
-      const savedUserInfo = localStorage.getItem(USER_INFO_KEY);
-      
       console.log("AUTH DEBUG - Login:", {
-        tokenSaved: !!savedToken,
-        userInfoSaved: !!savedUserInfo,
+        tokenSaved: !!Cookies.get(TOKEN_COOKIE_NAME),
+        userInfoSaved: !!localStorage.getItem(USER_INFO_KEY),
         isAuthenticatedNow: authService.isAuthenticated()
       });
 
       return {
         success: true,
         message: "Login realizado com sucesso",
-        sessionData: {
-          access_token: mockToken,
-          token_type: "Bearer",
-          user_id: mockUserId,
-          username: mockUsername,
-          expires_in_hours: 24,
-        },
+        sessionData: data,
       };
     } catch (error: any) {
+      console.error("Login error:", error);
       return {
         success: false,
-        message: "Erro ao fazer login",
+        message: error.message || "Erro ao fazer login",
       };
     }
   },
