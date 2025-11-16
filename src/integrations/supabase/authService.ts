@@ -37,15 +37,26 @@ export const authService = {
       // Store token in cookie (expires in 24 hours)
       Cookies.set(TOKEN_COOKIE_NAME, mockToken, {
         expires: 1, // 1 day
-        secure: true,
-        sameSite: 'strict'
+        secure: false, // Changed to false for local development
+        sameSite: 'lax' // Changed to lax for better compatibility
       });
 
       // Store user info in localStorage
-      localStorage.setItem(USER_INFO_KEY, JSON.stringify({
+      const userInfo = {
         user_id: mockUserId,
         username: mockUsername,
-      }));
+      };
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
+
+      // Verify data was saved immediately
+      const savedToken = Cookies.get(TOKEN_COOKIE_NAME);
+      const savedUserInfo = localStorage.getItem(USER_INFO_KEY);
+      
+      console.log("AUTH DEBUG - Login:", {
+        tokenSaved: !!savedToken,
+        userInfoSaved: !!savedUserInfo,
+        isAuthenticatedNow: authService.isAuthenticated()
+      });
 
       return {
         success: true,
@@ -122,10 +133,22 @@ export const authService = {
   },
 
   isAuthenticated: (): boolean => {
-    const hasToken = !!Cookies.get(TOKEN_COOKIE_NAME);
-    const hasUserInfo = !!localStorage.getItem(USER_INFO_KEY);
+    const token = Cookies.get(TOKEN_COOKIE_NAME);
+    const userInfo = localStorage.getItem(USER_INFO_KEY);
+    const hasToken = !!token;
+    const hasUserInfo = !!userInfo;
+    const isAuth = hasToken && hasUserInfo;
+    
+    console.log("AUTH DEBUG - isAuthenticated:", {
+      hasToken,
+      hasUserInfo,
+      isAuth,
+      token: token?.substring(0, 20) + "...",
+      userInfo: userInfo?.substring(0, 50) + "..."
+    });
+    
     // Ambos devem existir para considerar autenticado
-    return hasToken && hasUserInfo;
+    return isAuth;
   },
 
   getToken: (): string | undefined => {
