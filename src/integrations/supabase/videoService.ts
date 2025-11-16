@@ -43,11 +43,15 @@ export const videoService = {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
     
-    console.log("🎬 VIDEO SERVICE - Iniciando renderVideo:", {
-      endpoint: "/api/render",
-      params,
-      baseURL: API_URL
-    });
+    console.log("═══════════════════════════════════════════════════════");
+    console.log("🎬 VIDEO SERVICE - INICIANDO RENDER VIDEO");
+    console.log("═══════════════════════════════════════════════════════");
+    console.log("📍 URL BASE:", API_URL);
+    console.log("📍 ENDPOINT:", "/api/render");
+    console.log("📍 URL COMPLETA:", `${API_URL}/api/render`);
+    console.log("📍 MÉTODO:", "POST");
+    console.log("📦 PAYLOAD ENVIADO:", JSON.stringify(params, null, 2));
+    console.log("═══════════════════════════════════════════════════════");
     
     try {
       const response = await apiClient.post<JobResponse>("/api/render", params, {
@@ -55,22 +59,42 @@ export const videoService = {
       });
       clearTimeout(timeoutId);
       
-      console.log("✅ VIDEO SERVICE - Vídeo criado com sucesso:", response.data);
+      console.log("═══════════════════════════════════════════════════════");
+      console.log("✅ VIDEO SERVICE - RESPOSTA SUCESSO");
+      console.log("═══════════════════════════════════════════════════════");
+      console.log("📦 RESPONSE DATA:", JSON.stringify(response.data, null, 2));
+      console.log("═══════════════════════════════════════════════════════");
+      
       return response.data;
     } catch (error: any) {
       clearTimeout(timeoutId);
       
-      console.error("❌ VIDEO SERVICE - Erro ao criar vídeo:", {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
+      console.log("═══════════════════════════════════════════════════════");
+      console.log("❌ VIDEO SERVICE - ERRO NA REQUISIÇÃO");
+      console.log("═══════════════════════════════════════════════════════");
+      console.log("🔴 ERRO TIPO:", error.name);
+      console.log("🔴 ERRO CÓDIGO:", error.code);
+      console.log("🔴 ERRO MENSAGEM:", error.message);
+      
+      if (error.response) {
+        console.log("📊 RESPONSE STATUS:", error.response.status);
+        console.log("📊 RESPONSE STATUS TEXT:", error.response.statusText);
+        console.log("📦 RESPONSE DATA (ERRO):", JSON.stringify(error.response.data, null, 2));
+        console.log("📋 RESPONSE HEADERS:", error.response.headers);
+      } else if (error.request) {
+        console.log("📡 REQUEST FEITO MAS SEM RESPOSTA");
+        console.log("📡 REQUEST:", error.request);
+      } else {
+        console.log("🔧 ERRO NA CONFIGURAÇÃO:", error.message);
+      }
+      
+      console.log("🔍 ERRO COMPLETO:", error);
+      console.log("═══════════════════════════════════════════════════════");
       
       if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
         throw new Error("Tempo limite excedido. O servidor pode estar ocupado.");
       }
-      throw new Error(error.response?.data?.message || "Erro ao criar vídeo");
+      throw new Error(error.response?.data?.message || error.response?.data?.detail || "Erro ao criar vídeo");
     }
   },
 

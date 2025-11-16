@@ -31,8 +31,33 @@ class ApiClient {
         }
       }
       
+      console.log("🌐 API CLIENT - REQUEST INTERCEPTOR:");
+      console.log("  URL:", config.baseURL + config.url);
+      console.log("  MÉTODO:", config.method?.toUpperCase());
+      console.log("  HEADERS:", JSON.stringify(config.headers, null, 2));
+      console.log("  DATA:", config.data);
+      
       return config;
     });
+
+    // Interceptor para logar respostas
+    this.client.interceptors.response.use(
+      (response) => {
+        console.log("🌐 API CLIENT - RESPONSE INTERCEPTOR (SUCCESS):");
+        console.log("  STATUS:", response.status);
+        console.log("  DATA:", response.data);
+        return response;
+      },
+      (error) => {
+        console.log("🌐 API CLIENT - RESPONSE INTERCEPTOR (ERROR):");
+        if (error.response) {
+          console.log("  STATUS:", error.response.status);
+          console.log("  DATA:", error.response.data);
+          console.log("  HEADERS:", error.response.headers);
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<{ data: T }> {
