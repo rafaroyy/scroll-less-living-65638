@@ -59,6 +59,7 @@ export default function Auth() {
           description: result.message,
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
@@ -72,16 +73,18 @@ export default function Auth() {
         
         setFormData({ email: "", password: "" });
         
-        // Force redirect with window.location to ensure clean state
-        window.location.href = "/editor";
+        // Redirect immediately without waiting for state updates
+        window.location.replace("/editor");
+      } else {
+        setLoading(false);
       }
     } catch (error) {
+      console.error("Erro no login:", error);
       toast({
         title: "Erro inesperado",
         description: "Ocorreu um erro ao fazer login. Tente novamente.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
