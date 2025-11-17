@@ -17,7 +17,7 @@ class ApiClient {
       headers: {
         "Content-Type": "application/json",
       },
-      timeout: 30000, // 30s default timeout
+      timeout: 180000, // 180s timeout para permitir renderização de vídeos
     });
 
     // Interceptor para adicionar token de autenticação
