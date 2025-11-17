@@ -62,6 +62,15 @@ export const authService = {
     }
   },
 
+  getToken: () => {
+    return Cookies.get(TOKEN_COOKIE_NAME) || null;
+  },
+
+  getUserInfo: () => {
+    const info = localStorage.getItem(USER_INFO_KEY);
+    return info ? JSON.parse(info) : null;
+  },
+
   isAuthenticated: () => {
     const token = Cookies.get(TOKEN_COOKIE_NAME);
     const info = localStorage.getItem(USER_INFO_KEY);
