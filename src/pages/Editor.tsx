@@ -27,6 +27,8 @@ export default function Editor() {
   const [jobs, setJobs] = useState<VideoJob[]>([]);
   const [activePolls, setActivePolls] = useState<Set<string>>(new Set());
   const [username, setUsername] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     objetivo: "",
     tema: "",
@@ -143,11 +145,16 @@ export default function Editor() {
     setLoading(true);
     
     try {
+      console.log("🎬 Iniciando criação de vídeo...");
       const result = await videoService.renderVideo(formData);
+
+      console.log("✅ Job criado com sucesso:", result.job_id);
+      setIsGenerating(true);
+      setCurrentJobId(result.job_id);
 
       toast({
         title: "Vídeo em processamento!",
-        description: `Job ID: ${result.job_id}`,
+        description: "Isso pode levar até 30 segundos...",
       });
 
       const newJob = {
@@ -170,32 +177,43 @@ export default function Editor() {
         aspect_ratio: "9:16"
       });
 
-      pollJobStatus(result.job_id);
+      startPollingJob(result.job_id);
     } catch (error: any) {
       toast({
         title: "Erro ao criar vídeo",
         description: error.message || "Tempo limite excedido. Tente novamente.",
         variant: "destructive",
       });
-      console.error("Erro ao criar vídeo:", error);
+      console.error("❌ Erro ao criar vídeo:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const pollJobStatus = async (jobId: string) => {
-    if (activePolls.has(jobId)) return;
+  const startPollingJob = (jobId: string) => {
+    if (activePolls.has(jobId)) {
+      console.log("⚠️ Polling já ativo para job:", jobId);
+      return;
+    }
+
+    console.log("🔄 Iniciando polling para job:", jobId);
 
     setActivePolls(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(jobId)) return prev;
       newSet.add(jobId);
       return newSet;
     });
 
+    let pollCount = 0;
+    const maxPolls = 30; // 30 polls * 2s = 60s timeout
+
     const interval = setInterval(async () => {
+      pollCount++;
+      console.log(`📡 Polling #${pollCount} para job ${jobId}...`);
+
       try {
         const status = await videoService.getJobStatus(jobId);
+        console.log(`📊 Status recebido:`, status.status);
 
         setJobs(prevJobs =>
           prevJobs.map(job =>
@@ -211,12 +229,10 @@ export default function Editor() {
           )
         );
 
-        if (status.status === "completed" || status.status === "failed") {
-          const intervalToRemove = intervalsRef.current.get(jobId);
-          if (intervalToRemove) {
-            clearInterval(intervalToRemove);
-            intervalsRef.current.delete(jobId);
-          }
+        if (status.status === "completed") {
+          console.log("✅ Vídeo completado!");
+          clearInterval(interval);
+          intervalsRef.current.delete(jobId);
           
           setActivePolls(prev => {
             const newSet = new Set(prev);
@@ -224,35 +240,84 @@ export default function Editor() {
             return newSet;
           });
 
-          if (status.status === "completed") {
-            toast({
-              title: "Vídeo pronto!",
-              description: `O vídeo ${jobId} foi processado com sucesso.`,
-            });
-          } else {
-            toast({
-              title: "Erro no processamento",
-              description: status.error || "Falha ao processar vídeo",
-              variant: "destructive",
-            });
+          if (currentJobId === jobId) {
+            setIsGenerating(false);
+            setCurrentJobId(null);
           }
+
+          toast({
+            title: "Vídeo pronto!",
+            description: "O vídeo foi processado com sucesso.",
+          });
+
+          // Recarrega a lista de vídeos
+          await loadUserVideos();
+        } else if (status.status === "failed") {
+          console.log("❌ Vídeo falhou!");
+          clearInterval(interval);
+          intervalsRef.current.delete(jobId);
+          
+          setActivePolls(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(jobId);
+            return newSet;
+          });
+
+          if (currentJobId === jobId) {
+            setIsGenerating(false);
+            setCurrentJobId(null);
+          }
+
+          toast({
+            title: "Erro no processamento",
+            description: status.error || "Falha ao processar vídeo",
+            variant: "destructive",
+          });
+        } else if (pollCount >= maxPolls) {
+          console.log("⏱️ Timeout atingido!");
+          clearInterval(interval);
+          intervalsRef.current.delete(jobId);
+          
+          setActivePolls(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(jobId);
+            return newSet;
+          });
+
+          if (currentJobId === jobId) {
+            setIsGenerating(false);
+            setCurrentJobId(null);
+          }
+
+          toast({
+            title: "Tempo limite excedido",
+            description: "O processamento está demorando mais que o esperado. Verifique a lista de vídeos.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
-        const intervalToRemove = intervalsRef.current.get(jobId);
-        if (intervalToRemove) {
-          clearInterval(intervalToRemove);
-          intervalsRef.current.delete(jobId);
-        }
+        console.error("❌ Erro no polling:", error);
+        clearInterval(interval);
+        intervalsRef.current.delete(jobId);
         
         setActivePolls(prev => {
           const newSet = new Set(prev);
           newSet.delete(jobId);
           return newSet;
         });
+
+        if (currentJobId === jobId) {
+          setIsGenerating(false);
+          setCurrentJobId(null);
+        }
       }
-    }, 5000);
+    }, 2000); // Poll a cada 2 segundos
 
     intervalsRef.current.set(jobId, interval);
+  };
+
+  const pollJobStatus = async (jobId: string) => {
+    startPollingJob(jobId);
   };
 
   const handleDownload = async (jobId: string) => {
@@ -535,11 +600,16 @@ export default function Editor() {
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button type="submit" className="w-full" disabled={loading || isGenerating}>
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Criando vídeo...
+                        Criando job...
+                      </>
+                    ) : isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Gerando vídeo...
                       </>
                     ) : (
                       <>
@@ -548,6 +618,11 @@ export default function Editor() {
                       </>
                     )}
                   </Button>
+                  {isGenerating && (
+                    <p className="text-sm text-muted-foreground text-center mt-2">
+                      Isso pode levar até 30 segundos...
+                    </p>
+                  )}
                 </div>
               </form>
             </CardContent>
