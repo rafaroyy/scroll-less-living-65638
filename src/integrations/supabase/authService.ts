@@ -30,14 +30,17 @@ export const authService = {
 
       const data = res.data;
 
-      // Salva token com nome padronizado
+      // Salva token em localStorage (principal)
+      localStorage.setItem("auth_token", data.access_token);
+      
+      // Salva token em cookie (fallback)
       Cookies.set(TOKEN_COOKIE_NAME, data.access_token, {
         expires: 1,
-        secure: true,
+        secure: window.location.protocol === "https:",
         sameSite: "lax",
       });
       
-      console.log("✅ TOKEN SALVO NO COOKIE:", TOKEN_COOKIE_NAME);
+      console.log("✅ TOKEN SALVO EM LOCALSTORAGE E COOKIE:", TOKEN_COOKIE_NAME);
       console.log("✅ TOKEN VALUE:", data.access_token.substring(0, 20) + "...");
 
       // Salva user info
@@ -81,6 +84,7 @@ export const authService = {
   },
 
   logout: () => {
+    localStorage.removeItem("auth_token");
     Cookies.remove(TOKEN_COOKIE_NAME);
     localStorage.removeItem(USER_INFO_KEY);
   },

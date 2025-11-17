@@ -38,16 +38,26 @@ class ApiClient {
           }
         }
       } else {
-        // Add Authorization header with JWT token
-        const token = Cookies.get(TOKEN_COOKIE_NAME);
-        console.log("🔐 LENDO TOKEN DO COOKIE:", TOKEN_COOKIE_NAME);
-        console.log("🔐 TOKEN ENCONTRADO:", token ? token.substring(0, 20) + "..." : "NENHUM");
+        // Read token from localStorage first, then cookie
+        const lsToken = typeof window !== "undefined" 
+          ? window.localStorage.getItem("auth_token")
+          : null;
+        const cookieToken = Cookies.get(TOKEN_COOKIE_NAME);
+        const token = lsToken || cookieToken;
         
-        if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`;
-          console.log("✅ AUTHORIZATION HEADER ADICIONADO");
-        } else if (!token) {
-          console.log("❌ TOKEN NÃO ENCONTRADO NO COOKIE");
+        console.log("🔐 LENDO TOKEN:");
+        console.log("  - localStorage:", lsToken ? lsToken.substring(0, 20) + "..." : "NENHUM");
+        console.log("  - cookie:", cookieToken ? cookieToken.substring(0, 20) + "..." : "NENHUM");
+        console.log("  - token usado:", token ? token.substring(0, 20) + "..." : "NENHUM");
+        
+        if (token) {
+          if (!config.headers) {
+            config.headers = {} as any;
+          }
+          (config.headers as any).Authorization = `Bearer ${token}`;
+          console.log("✅ AUTHORIZATION HEADER ADICIONADO:", `Bearer ${token.substring(0, 20)}...`);
+        } else {
+          console.log("❌ TOKEN NÃO ENCONTRADO EM LOCALSTORAGE NEM COOKIE");
         }
       }
 
