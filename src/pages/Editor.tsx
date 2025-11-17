@@ -143,19 +143,20 @@ export default function Editor() {
     }
 
     setLoading(true);
+    setIsGenerating(true);
     
     try {
       console.log("🎬 Iniciando criação de vídeo...");
+      
+      toast({
+        title: "Gerando vídeo...",
+        description: "Seu vídeo está sendo gerado! Isso normalmente leva até 1 minuto.",
+      });
+
       const result = await videoService.renderVideo(formData);
 
       console.log("✅ Job criado com sucesso:", result.job_id);
-      setIsGenerating(true);
       setCurrentJobId(result.job_id);
-
-      toast({
-        title: "Vídeo em processamento!",
-        description: "Isso pode levar até 30 segundos...",
-      });
 
       const newJob = {
         job_id: result.job_id,
@@ -179,12 +180,16 @@ export default function Editor() {
 
       startPollingJob(result.job_id);
     } catch (error: any) {
-      toast({
-        title: "Erro ao criar vídeo",
-        description: error.message || "Tempo limite excedido. Tente novamente.",
-        variant: "destructive",
-      });
+      // Só mostra erro se não iniciou o polling (não obteve job_id)
+      if (!currentJobId) {
+        toast({
+          title: "Erro ao criar vídeo",
+          description: error.message || "Não foi possível criar o vídeo. Tente novamente.",
+          variant: "destructive",
+        });
+      }
       console.error("❌ Erro ao criar vídeo:", error);
+      setIsGenerating(false);
     } finally {
       setLoading(false);
     }
@@ -246,8 +251,8 @@ export default function Editor() {
           }
 
           toast({
-            title: "Vídeo pronto!",
-            description: "O vídeo foi processado com sucesso.",
+            title: "Vídeo gerado com sucesso!",
+            description: "Seu vídeo está pronto e aparecerá na lista.",
           });
 
           // Recarrega a lista de vídeos
@@ -620,7 +625,7 @@ export default function Editor() {
                   </Button>
                   {isGenerating && (
                     <p className="text-sm text-muted-foreground text-center mt-2">
-                      Isso pode levar até 30 segundos...
+                      Seu vídeo está sendo gerado! Isso normalmente leva até 1 minuto.
                     </p>
                   )}
                 </div>
