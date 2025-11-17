@@ -210,7 +210,7 @@ export default function Editor() {
     });
 
     let pollCount = 0;
-    const maxPolls = 30; // 30 polls * 2s = 60s timeout
+    const maxPolls = 40; // 40 polls * 3s = 120s timeout
 
     const interval = setInterval(async () => {
       pollCount++;
@@ -251,8 +251,8 @@ export default function Editor() {
           }
 
           toast({
-            title: "Vídeo gerado com sucesso!",
-            description: "Seu vídeo está pronto e aparecerá na lista.",
+            title: "Vídeo pronto!",
+            description: "Seu vídeo foi gerado com sucesso e está disponível na lista.",
           });
 
           // Recarrega a lista de vídeos
@@ -316,7 +316,7 @@ export default function Editor() {
           setCurrentJobId(null);
         }
       }
-    }, 2000); // Poll a cada 2 segundos
+    }, 3000); // Poll a cada 3 segundos
 
     intervalsRef.current.set(jobId, interval);
   };
@@ -624,9 +624,10 @@ export default function Editor() {
                     )}
                   </Button>
                   {isGenerating && (
-                    <p className="text-sm text-muted-foreground text-center mt-2">
-                      Seu vídeo está sendo gerado! Isso normalmente leva até 1 minuto.
-                    </p>
+                    <div className="text-sm text-muted-foreground text-center mt-2 space-y-1">
+                      <p>Seu vídeo está sendo gerado! Isso pode levar até 1 minuto.</p>
+                      <p>Você será notificado automaticamente quando estiver pronto.</p>
+                    </div>
                   )}
                 </div>
               </form>
