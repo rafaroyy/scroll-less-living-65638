@@ -40,9 +40,6 @@ interface VideoListItem {
 export const videoService = {
   // Criar um novo vídeo
   renderVideo: async (params: VideoRequest): Promise<JobResponse> => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-    
     console.log("═══════════════════════════════════════════════════════");
     console.log("🎬 VIDEO SERVICE - INICIANDO RENDER VIDEO");
     console.log("═══════════════════════════════════════════════════════");
@@ -54,10 +51,7 @@ export const videoService = {
     console.log("═══════════════════════════════════════════════════════");
     
     try {
-      const response = await apiClient.post<JobResponse>("/videos/render", params, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
+      const response = await apiClient.post<JobResponse>("/videos/render", params);
       
       console.log("═══════════════════════════════════════════════════════");
       console.log("✅ VIDEO SERVICE - RESPOSTA SUCESSO");
@@ -67,8 +61,6 @@ export const videoService = {
       
       return response.data;
     } catch (error: any) {
-      clearTimeout(timeoutId);
-      
       console.log("═══════════════════════════════════════════════════════");
       console.log("❌ VIDEO SERVICE - ERRO NA REQUISIÇÃO");
       console.log("═══════════════════════════════════════════════════════");
@@ -100,17 +92,10 @@ export const videoService = {
 
   // Verificar status do job
   getJobStatus: async (jobId: string): Promise<JobStatusResponse> => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-    
     try {
-      const response = await apiClient.get<JobStatusResponse>(`/videos/status/${jobId}`, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
+      const response = await apiClient.get<JobStatusResponse>(`/videos/status/${jobId}`);
       return response.data;
     } catch (error: any) {
-      clearTimeout(timeoutId);
       if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
         throw new Error("Tempo limite excedido ao verificar status");
       }
