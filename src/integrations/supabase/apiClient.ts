@@ -23,20 +23,26 @@ class ApiClient {
     // Interceptor para adicionar token de autenticação
     this.client.interceptors.request.use((config) => {
       const skipAuth = (config as ApiClientConfig).skipAuth;
-      
-      if (!skipAuth) {
-        const token = Cookies.get(TOKEN_COOKIE_NAME);
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+
+      if (skipAuth) {
+        if (config.headers && "Authorization" in config.headers) {
+          try {
+            delete (config.headers as any).Authorization;
+          } catch {
+            // fallback caso seja AxiosHeaders
+            if (typeof config.headers.set === "function") {
+              config.headers.set("Authorization", "");
+            }
+          }
         }
       }
-      
+
       console.log("🌐 API CLIENT - REQUEST INTERCEPTOR:");
       console.log("  URL:", config.baseURL + config.url);
       console.log("  MÉTODO:", config.method?.toUpperCase());
       console.log("  HEADERS:", JSON.stringify(config.headers, null, 2));
       console.log("  DATA:", config.data);
-      
+
       return config;
     });
 
@@ -56,7 +62,7 @@ class ApiClient {
           console.log("  HEADERS:", error.response.headers);
         }
         return Promise.reject(error);
-      }
+      },
     );
   }
 
