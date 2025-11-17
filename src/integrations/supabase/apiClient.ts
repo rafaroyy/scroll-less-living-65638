@@ -25,6 +25,7 @@ class ApiClient {
       const skipAuth = (config as ApiClientConfig).skipAuth;
 
       if (skipAuth) {
+        console.log("🔓 SKIP AUTH - Removendo Authorization header");
         // Remove Authorization header if skipAuth is true
         if (config.headers && "Authorization" in config.headers) {
           try {
@@ -39,8 +40,14 @@ class ApiClient {
       } else {
         // Add Authorization header with JWT token
         const token = Cookies.get(TOKEN_COOKIE_NAME);
+        console.log("🔐 LENDO TOKEN DO COOKIE:", TOKEN_COOKIE_NAME);
+        console.log("🔐 TOKEN ENCONTRADO:", token ? token.substring(0, 20) + "..." : "NENHUM");
+        
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
+          console.log("✅ AUTHORIZATION HEADER ADICIONADO");
+        } else if (!token) {
+          console.log("❌ TOKEN NÃO ENCONTRADO NO COOKIE");
         }
       }
 

@@ -30,12 +30,15 @@ export const authService = {
 
       const data = res.data;
 
-      // Salva token
+      // Salva token com nome padronizado
       Cookies.set(TOKEN_COOKIE_NAME, data.access_token, {
         expires: 1,
         secure: true,
         sameSite: "lax",
       });
+      
+      console.log("✅ TOKEN SALVO NO COOKIE:", TOKEN_COOKIE_NAME);
+      console.log("✅ TOKEN VALUE:", data.access_token.substring(0, 20) + "...");
 
       // Salva user info
       localStorage.setItem(
