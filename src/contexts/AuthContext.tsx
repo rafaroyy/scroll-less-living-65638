@@ -1,11 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authService } from "@/integrations/supabase/authService";
+import { videoService } from "@/integrations/supabase/videoService";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   authReady: boolean;
   token: string | null;
   userInfo: any | null;
+  videos: any[];
+  processingVideos: any[];
+  reloadVideos: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
 }
@@ -17,6 +21,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<any | null>(null);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [processingVideos, setProcessingVideos] = useState<any[]>([]);
+
+  const reloadVideos = async () => {
+    try {
+      const list = await videoService.listVideos();
+      
+      const completed = list.filter((v: any) => v.status === "completed");
+      const processing = list.filter((v: any) => v.status !== "completed");
+      
+      setVideos(completed);
+      setProcessingVideos(processing);
+    } catch (error) {
+      console.error("Error loading videos:", error);
+    }
+  };
 
   useEffect(() => {
     console.log("AUTH CONTEXT - Initializing...");
@@ -36,6 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(storedToken);
         setUserInfo(storedUserInfo);
         setIsAuthenticated(true);
+        
+        // Load videos after authentication is confirmed
+        await reloadVideos();
       }
       
       setAuthReady(true);
@@ -84,7 +107,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   console.log("AUTH CONTEXT - Current state:", { authReady, isAuthenticated, hasToken: !!token, hasUserInfo: !!userInfo });
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, authReady, token, userInfo, login, logout }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      authReady, 
+      token, 
+      userInfo, 
+      videos, 
+      processingVideos, 
+      reloadVideos,
+      login, 
+      logout 
+    }}>
       {children}
     </AuthContext.Provider>
   );
