@@ -255,13 +255,15 @@ export default function Editor() {
       setJobs((prev) => prev.filter((j) => j.job_id !== tempId));
 
       toast({
-        title: "Erro ao criar vídeo",
+        title: "O vídeo será gerado em alguns segundos",
         description: error?.message || "Tente novamente",
-        variant: "destructive",
+        variant: "default",
       });
 
-      setIsGenerating(false);
+      setIsGenerating(true);
       setLoading(false);
+
+      return;
     }
   };
 
