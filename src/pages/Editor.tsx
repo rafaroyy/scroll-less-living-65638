@@ -29,6 +29,7 @@ export default function Editor() {
   const [username, setUsername] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [fakeProgress, setFakeProgress] = useState(0);
+  const [showProgressBar, setShowProgressBar] = useState(false);
   const [formData, setFormData] = useState({
     objetivo: "",
     tema: "",
@@ -71,32 +72,31 @@ export default function Editor() {
     };
   }, []);
 
-  // Efeito da barra de progresso fake
+  // Fake progress bar effect - exactly 150 seconds (2min30s)
   useEffect(() => {
-    if (!isGenerating) {
+    if (!showProgressBar) {
       setFakeProgress(0);
       return;
     }
 
-    let progress = 0;
+    const TOTAL_DURATION = 150000; // 150s
+    const INTERVAL = 100; // atualiza a cada 100ms
+    let elapsed = 0;
+
     const interval = setInterval(() => {
-      progress += Math.random() * 3 + 1; // 1-4% por tick
-      if (progress > 95) progress = 95; // nunca terminar sozinho
+      elapsed += INTERVAL;
+
+      const progress = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
       setFakeProgress(progress);
-    }, 1200);
+
+      if (progress >= 100) {
+        clearInterval(interval);
+        setTimeout(() => setShowProgressBar(false), 1200); // fade-out suave
+      }
+    }, INTERVAL);
 
     return () => clearInterval(interval);
-  }, [isGenerating]);
-
-  // Detectar quando um vídeo foi concluído para finalizar a barra
-  useEffect(() => {
-    if (isGenerating && completedJobs.length > 0) {
-      setFakeProgress(100);
-      setTimeout(() => {
-        setIsGenerating(false);
-      }, 500);
-    }
-  }, [completedJobs.length, isGenerating]);
+  }, [showProgressBar]);
 
   const loadUserVideos = async () => {
     try {
@@ -209,6 +209,8 @@ export default function Editor() {
     console.log("🎬 INICIANDO handleSubmit");
     setLoading(true);
     setIsGenerating(true);
+    setShowProgressBar(true);
+    setFakeProgress(0);
 
     // Criar job temporário IMEDIATAMENTE (sem depender de job_id do POST)
     const tempId = `temp-${Date.now()}`;
@@ -571,20 +573,22 @@ export default function Editor() {
                   </Button>
 
                   {/* Barra de progresso fake */}
-                  {isGenerating && (
-                    <div className="mt-4 space-y-2 text-center animate-fade-in">
-                      <div className="text-sm text-muted-foreground animate-pulse">
+                  {showProgressBar && (
+                    <div className="mt-4 space-y-2 text-center">
+                      <p className="text-sm text-muted-foreground animate-pulse">
                         Seu vídeo está sendo preparado...
-                      </div>
+                      </p>
 
                       <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
                         <div
-                          className="bg-primary h-2 transition-all duration-700 ease-out"
+                          className="bg-primary h-2 transition-all duration-200 ease-linear"
                           style={{ width: `${fakeProgress}%` }}
                         />
                       </div>
 
-                      <p className="text-xs text-muted-foreground">Isso pode levar alguns minutos. Falta pouco!</p>
+                      <p className="text-xs text-muted-foreground">
+                        Tempo estimado: ~2 minutos e 30 segundos
+                      </p>
                     </div>
                   )}
 
