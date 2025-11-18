@@ -286,7 +286,7 @@ export default function Editor() {
 
       toast({
         title: "O vídeo sendo gerado!",
-        description: "Aguarde cerca de 1 minuto e estará na aba de conclúidos.",
+        description: "Aguarde cerca de 3 minutos e estará na aba de conclúidos.",
         variant: "default",
       });
 
@@ -575,9 +575,7 @@ export default function Editor() {
                   {/* Barra de progresso fake */}
                   {showProgressBar && (
                     <div className="mt-4 space-y-2 text-center">
-                      <p className="text-sm text-muted-foreground animate-pulse">
-                        Seu vídeo está sendo preparado...
-                      </p>
+                      <p className="text-sm text-muted-foreground animate-pulse">Seu vídeo está sendo preparado...</p>
 
                       <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
                         <div
@@ -586,9 +584,7 @@ export default function Editor() {
                         />
                       </div>
 
-                      <p className="text-xs text-muted-foreground">
-                        Tempo estimado: ~2 minutos e 30 segundos
-                      </p>
+                      <p className="text-xs text-muted-foreground">Tempo estimado: ~2 minutos e 30 segundos</p>
                     </div>
                   )}
 
