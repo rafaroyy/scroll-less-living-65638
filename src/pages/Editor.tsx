@@ -30,6 +30,8 @@ export default function Editor() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [fakeProgress, setFakeProgress] = useState(0);
   const [showProgressBar, setShowProgressBar] = useState(false);
+  const [monthlyUsage, setMonthlyUsage] = useState(0);
+  const MONTHLY_LIMIT = 15;
   const [formData, setFormData] = useState({
     objetivo: "",
     tema: "",
@@ -148,6 +150,20 @@ export default function Editor() {
         return [...tempsStillValid, ...detailedJobs];
       });
 
+      // Calcular uso mensal
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const videosThisMonth = detailedJobs.filter(video => {
+        const date = new Date(video.created_at);
+        return (
+          date.getMonth() === currentMonth &&
+          date.getFullYear() === currentYear
+        );
+      });
+
+      setMonthlyUsage(videosThisMonth.length);
+
       // Remove loading quando QUALQUER lista vier do backend
       if (detailedJobs.length >= 0) {
         setLoadingVideos(false);
@@ -201,6 +217,15 @@ export default function Editor() {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (monthlyUsage >= MONTHLY_LIMIT) {
+      toast({
+        title: "Limite mensal atingido",
+        description: "Você já gerou 15 vídeos este mês.",
         variant: "destructive",
       });
       return;
@@ -558,7 +583,7 @@ export default function Editor() {
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button type="submit" className="w-full" disabled={loading || monthlyUsage >= MONTHLY_LIMIT}>
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -571,6 +596,20 @@ export default function Editor() {
                       </>
                     )}
                   </Button>
+
+                  {/* Aviso de limite atingido */}
+                  {monthlyUsage >= MONTHLY_LIMIT && (
+                    <p className="text-sm text-destructive text-center mt-2">
+                      Você atingiu o limite de 15 vídeos este mês.
+                    </p>
+                  )}
+
+                  {/* Contador de uso mensal */}
+                  {monthlyUsage < MONTHLY_LIMIT && (
+                    <p className="text-xs text-muted-foreground text-center mt-1">
+                      Você usou {monthlyUsage} de 15 vídeos este mês.
+                    </p>
+                  )}
 
                   {/* Barra de progresso fake */}
                   {showProgressBar && (
