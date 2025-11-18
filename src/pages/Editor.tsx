@@ -28,6 +28,7 @@ export default function Editor() {
   const [jobs, setJobs] = useState<VideoJob[]>([]);
   const [username, setUsername] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [fakeProgress, setFakeProgress] = useState(0);
   const [formData, setFormData] = useState({
     objetivo: "",
     tema: "",
@@ -69,6 +70,33 @@ export default function Editor() {
       }
     };
   }, []);
+
+  // Efeito da barra de progresso fake
+  useEffect(() => {
+    if (!isGenerating) {
+      setFakeProgress(0);
+      return;
+    }
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 3 + 1; // 1-4% por tick
+      if (progress > 95) progress = 95; // nunca terminar sozinho
+      setFakeProgress(progress);
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [isGenerating]);
+
+  // Detectar quando um vídeo foi concluído para finalizar a barra
+  useEffect(() => {
+    if (isGenerating && completedJobs.length > 0) {
+      setFakeProgress(100);
+      setTimeout(() => {
+        setIsGenerating(false);
+      }, 500);
+    }
+  }, [completedJobs.length, isGenerating]);
 
   const loadUserVideos = async () => {
     try {
@@ -541,7 +569,28 @@ export default function Editor() {
                       </>
                     )}
                   </Button>
-                  {processingJobs.length > 0 && (
+
+                  {/* Barra de progresso fake */}
+                  {isGenerating && (
+                    <div className="mt-4 space-y-2 text-center animate-fade-in">
+                      <div className="text-sm text-muted-foreground animate-pulse">
+                        Seu vídeo está sendo preparado...
+                      </div>
+
+                      <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-primary h-2 transition-all duration-700 ease-out"
+                          style={{ width: `${fakeProgress}%` }}
+                        />
+                      </div>
+
+                      <p className="text-xs text-muted-foreground">
+                        Isso pode levar alguns minutos. Falta pouco!
+                      </p>
+                    </div>
+                  )}
+
+                  {processingJobs.length > 0 && !isGenerating && (
                     <div className="text-sm text-muted-foreground text-center mt-2 space-y-1">
                       <p>Seu vídeo está sendo gerado! Isso pode levar até 2 minutos.</p>
                       <p>Você verá ele sair de "Processando" e aparecer em "Meus vídeos" automaticamente.</p>
