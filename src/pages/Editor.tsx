@@ -241,6 +241,13 @@ export default function Editor() {
         aspect_ratio: "9:16"
       });
     } catch (error: any) {
+      // Se for timeout, já foi tratado acima com mensagem amigável
+      // Aqui só chegam erros REAIS (4xx, 5xx)
+      if (error.isTimeout || error.isSanitized) {
+        console.log("⚠️ Timeout/cancelamento já tratado - ignorando catch");
+        return;
+      }
+
       console.error("❌ ERRO REAL NO HANDLESUBMIT:", error);
       
       // Apenas para erros REAIS (4xx, 5xx do backend):
@@ -248,7 +255,7 @@ export default function Editor() {
       
       toast({
         title: "Erro ao criar vídeo",
-        description: error.message || "Tente novamente",
+        description: error.message || "Houve um problema ao iniciar o processamento. Tente novamente.",
         variant: "destructive",
       });
       setIsGenerating(false);
