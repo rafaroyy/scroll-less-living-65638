@@ -231,7 +231,32 @@ export default function Editor() {
     } catch (error: any) {
       console.error("❌ ERRO NO HANDLESUBMIT:", error);
       
-      // Remove job temporário em caso de erro REAL
+      // Verificar se é timeout/cancelamento (NÃO é erro do job)
+      const isTimeout = 
+        error.code === "ERR_CANCELED" ||
+        error.code === "ECONNABORTED" ||
+        error.name === "AbortError" ||
+        error.message?.includes("cancel") ||
+        error.message?.includes("timeout") ||
+        error.message?.includes("aborted");
+
+      if (isTimeout) {
+        console.log("⚠️ Timeout detectado no handleSubmit - ignorando, job continua");
+        // NÃO remover job temporário
+        // NÃO mostrar erro
+        // Apenas iniciar polling global
+        startGlobalPolling();
+        
+        toast({
+          title: "Vídeo em processamento",
+          description: "Seu vídeo está sendo gerado. Aguarde, ele aparecerá automaticamente.",
+        });
+        
+        return; // Sair sem remover job ou mostrar erro
+      }
+
+      // Apenas para erros REAIS (não timeout):
+      console.error("❌ ERRO REAL (não timeout):", error);
       setJobs(prev => prev.filter(j => j.job_id !== tempId));
       
       toast({
