@@ -17,7 +17,7 @@ class ApiClient {
       headers: {
         "Content-Type": "application/json",
       },
-      timeout: 0, // Sem timeout - permite renderização de vídeos sem cancelamento
+      timeout: 0,
     });
 
     // Interceptor para adicionar token de autenticação
