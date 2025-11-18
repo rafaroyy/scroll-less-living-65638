@@ -26,10 +26,8 @@ export default function Editor() {
   const [loading, setLoading] = useState(false);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [jobs, setJobs] = useState<VideoJob[]>([]);
-  const [activePolls, setActivePolls] = useState<Set<string>>(new Set());
   const [username, setUsername] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     objetivo: "",
     tema: "",
@@ -38,19 +36,18 @@ export default function Editor() {
     idioma: "pt-BR",
     duracao: 30,
     cenas: 5,
-    aspect_ratio: "9:16"
+    aspect_ratio: "9:16",
   });
 
   const { toast } = useToast();
   const navigate = useNavigate();
   const { userInfo, logout } = useAuth();
-  const intervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const globalPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Estados computados para as abas
-  const processingJobs = jobs.filter(job => job.status === "pending" || job.status === "processing");
-  const completedJobs = jobs.filter(job => job.status === "completed");
-  const failedJobs = jobs.filter(job => job.status === "failed");
+  const processingJobs = jobs.filter((job) => job.status === "pending" || job.status === "processing");
+  const completedJobs = jobs.filter((job) => job.status === "completed");
+  const failedJobs = jobs.filter((job) => job.status === "failed");
 
   // Carrega o username do usuário
   useEffect(() => {
@@ -64,11 +61,9 @@ export default function Editor() {
     }, 150);
   }, []);
 
-  // Cleanup dos intervals ao desmontar
+  // Cleanup do polling global ao desmontar
   useEffect(() => {
     return () => {
-      intervalsRef.current.forEach((interval) => clearInterval(interval));
-      intervalsRef.current.clear();
       if (globalPollingRef.current) {
         clearInterval(globalPollingRef.current);
       }
@@ -79,9 +74,9 @@ export default function Editor() {
     try {
       const videos = await videoService.listVideos();
 
+      // ✅ PATCH 1: não resetar os jobs se o backend vier em formato inesperado
       if (!Array.isArray(videos)) {
-        console.error("Os vídeos retornados do backend não são um array:", videos);
-        setJobs([]);
+        console.warn("Formato inesperado dos vídeos. Mantendo lista anterior.");
         return;
       }
 
@@ -95,7 +90,7 @@ export default function Editor() {
               progress: status.progress,
               message: status.message,
               created_at: status.created_at,
-              updated_at: status.updated_at
+              updated_at: status.updated_at,
             };
           } catch (error) {
             console.warn(`Falha ao buscar status do vídeo ${video.job_id}, utilizando dados básicos.`);
@@ -105,29 +100,24 @@ export default function Editor() {
               progress: null,
               message: null,
               created_at: video.created_at,
-              updated_at: video.updated_at
+              updated_at: video.updated_at,
             };
           }
-        })
+        }),
       );
 
       // Atualiza jobs: mantém temporários até aparecerem reais
-      setJobs(prev => {
+      setJobs((prev) => {
         // 1. pegar temporários
-        const temps = prev.filter(j => j.temp);
+        const temps = prev.filter((j) => j.temp);
 
         // 2. remover temporários SOMENTE quando o vídeo real já existe
-        const tempsStillValid = temps.filter(temp =>
-          !detailedJobs.some(real => real.job_id === temp.job_id)
-        );
+        const tempsStillValid = temps.filter((temp) => !detailedJobs.some((real) => real.job_id === temp.job_id));
 
         console.log("📋 Temporários mantidos:", tempsStillValid.length, "| Jobs do backend:", detailedJobs.length);
 
         // 3. resultado final
-        return [
-          ...tempsStillValid,
-          ...detailedJobs
-        ];
+        return [...tempsStillValid, ...detailedJobs];
       });
 
       // Remove loading quando QUALQUER lista vier do backend
@@ -135,12 +125,13 @@ export default function Editor() {
         setLoadingVideos(false);
       }
 
-      // Parar polling global se não houver mais jobs processando
-      const stillProcessing = detailedJobs.some(j => 
-        j.status === "pending" || j.status === "processing"
-      );
-      
-      if (!stillProcessing && globalPollingRef.current) {
+      // Controla o polling global conforme status atuais
+      const stillProcessing = detailedJobs.some((j) => j.status === "pending" || j.status === "processing");
+
+      if (stillProcessing) {
+        startGlobalPolling();
+        setIsGenerating(true);
+      } else if (globalPollingRef.current) {
         console.log("⏸️ Parando polling global - nenhum vídeo processando");
         clearInterval(globalPollingRef.current);
         globalPollingRef.current = null;
@@ -194,17 +185,17 @@ export default function Editor() {
     // Criar job temporário IMEDIATAMENTE (sem depender de job_id do POST)
     const tempId = `temp-${Date.now()}`;
     console.log("➕ CRIANDO JOB TEMPORÁRIO:", tempId);
-    
-    setJobs(prev => [
+
+    setJobs((prev) => [
       {
         job_id: tempId,
         status: "processing",
         progress: null,
         message: "Iniciando geração do vídeo...",
         created_at: new Date().toISOString(),
-        temp: true
+        temp: true,
       },
-      ...prev
+      ...prev,
     ]);
 
     // Iniciar polling global IMEDIATAMENTE
@@ -220,7 +211,8 @@ export default function Editor() {
         console.log("⚠️ Timeout detectado - job continua no backend");
         toast({
           title: "Seu vídeo ainda está sendo gerado",
-          description: "O servidor está levando um pouco mais de tempo, mas o vídeo continua em processamento. Ele vai aparecer em 'Concluídos' assim que estiver pronto.",
+          description:
+            "O servidor está levando um pouco mais de tempo, mas o vídeo continua em processamento. Ele vai aparecer em 'Concluídos' assim que estiver pronto.",
           variant: "default",
         });
       } else {
@@ -230,6 +222,7 @@ export default function Editor() {
         });
       }
 
+      // Reset do formulário e libera botão
       setFormData({
         objetivo: "",
         tema: "",
@@ -238,151 +231,38 @@ export default function Editor() {
         idioma: "pt-BR",
         duracao: 30,
         cenas: 5,
-        aspect_ratio: "9:16"
+        aspect_ratio: "9:16",
       });
+      setLoading(false);
     } catch (error: any) {
+      // ✅ PATCH 3: distinguir timeout/cancelamento de erro real
+      const isTimeout =
+        error?.code === "ERR_CANCELED" ||
+        error?.code === "ECONNABORTED" ||
+        error?.name === "AbortError" ||
+        error?.message?.toLowerCase?.().includes("timeout") ||
+        error?.message?.toLowerCase?.().includes("cancel");
+
+      if (isTimeout) {
+        console.log("⚠️ Timeout detectado - continuar processando");
+        setLoading(false); // não travar o botão
+        return;
+      }
+
       console.error("❌ ERRO REAL NO HANDLESUBMIT:", error);
-      
-      // Apenas para erros REAIS (4xx, 5xx do backend):
-      setJobs(prev => prev.filter(j => j.job_id !== tempId));
-      
+
+      // ERRO REAL: remove o temporário e sinaliza erro
+      setJobs((prev) => prev.filter((j) => j.job_id !== tempId));
+
       toast({
         title: "Erro ao criar vídeo",
-        description: error.message || "Tente novamente",
+        description: error?.message || "Tente novamente",
         variant: "destructive",
       });
+
       setIsGenerating(false);
+      setLoading(false);
     }
-  };
-
-  const startPollingJob = (jobId: string) => {
-    if (activePolls.has(jobId)) {
-      console.log("⚠️ Polling já ativo para job:", jobId);
-      return;
-    }
-
-    console.log("🔄 Iniciando polling para job:", jobId);
-
-    setActivePolls(prev => {
-      const newSet = new Set(prev);
-      newSet.add(jobId);
-      return newSet;
-    });
-
-    let pollCount = 0;
-    const maxPolls = 40; // 40 polls * 3s = 120s timeout
-
-    const interval = setInterval(async () => {
-      pollCount++;
-      console.log(`📡 Polling #${pollCount} para job ${jobId}...`);
-
-      try {
-        const status = await videoService.getJobStatus(jobId);
-        console.log(`📊 Status recebido:`, status.status);
-
-        setJobs(prevJobs =>
-          prevJobs.map(job =>
-            job.job_id === jobId
-              ? {
-                  ...job,
-                  status: status.status,
-                  progress: status.progress,
-                  message: status.message,
-                  updated_at: status.updated_at
-                }
-              : job
-          )
-        );
-
-        if (status.status === "completed") {
-          console.log("✅ Vídeo completado!");
-          clearInterval(interval);
-          intervalsRef.current.delete(jobId);
-          
-          setActivePolls(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(jobId);
-            return newSet;
-          });
-
-          if (currentJobId === jobId) {
-            setIsGenerating(false);
-            setCurrentJobId(null);
-          }
-
-          toast({
-            title: "Vídeo pronto!",
-            description: "Seu vídeo foi gerado e já está disponível em 'Meus Vídeos'.",
-          });
-
-          // Recarrega a lista de vídeos
-          await loadUserVideos();
-        } else if (status.status === "failed") {
-          console.log("❌ Vídeo falhou!");
-          clearInterval(interval);
-          intervalsRef.current.delete(jobId);
-          
-          setActivePolls(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(jobId);
-            return newSet;
-          });
-
-          if (currentJobId === jobId) {
-            setIsGenerating(false);
-            setCurrentJobId(null);
-          }
-
-          toast({
-            title: "Erro na geração",
-            description: status.error || "O vídeo falhou ao ser processado.",
-            variant: "destructive",
-          });
-        } else if (pollCount >= maxPolls) {
-          console.log("⏱️ Timeout atingido!");
-          clearInterval(interval);
-          intervalsRef.current.delete(jobId);
-          
-          setActivePolls(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(jobId);
-            return newSet;
-          });
-
-          if (currentJobId === jobId) {
-            setIsGenerating(false);
-            setCurrentJobId(null);
-          }
-
-          toast({
-            title: "Demora incomum",
-            description: "O vídeo está levando mais tempo que o normal. Tente verificar novamente em 'Meus Vídeos' em alguns instantes.",
-            variant: "default",
-          });
-        }
-      } catch (error) {
-        console.error("❌ Erro no polling:", error);
-        clearInterval(interval);
-        intervalsRef.current.delete(jobId);
-        
-        setActivePolls(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(jobId);
-          return newSet;
-        });
-
-        if (currentJobId === jobId) {
-          setIsGenerating(false);
-          setCurrentJobId(null);
-        }
-      }
-    }, 3000); // Poll a cada 3 segundos
-
-    intervalsRef.current.set(jobId, interval);
-  };
-
-  const pollJobStatus = async (jobId: string) => {
-    startPollingJob(jobId);
   };
 
   const handleDownload = async (jobId: string) => {
@@ -390,13 +270,13 @@ export default function Editor() {
       console.log("📥 INICIANDO DOWNLOAD:", jobId);
       const blob = await videoService.downloadVideo(jobId);
       console.log("✅ BLOB RECEBIDO:", blob.size, "bytes");
-      
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `${jobId}.mp4`;
       a.click();
-      
+
       URL.revokeObjectURL(url);
 
       toast({
@@ -413,11 +293,10 @@ export default function Editor() {
     }
   };
 
-
   const handleDelete = async (jobId: string) => {
     try {
       await videoService.deleteVideo(jobId);
-      setJobs(jobs.filter(job => job.job_id !== jobId));
+      setJobs((prev) => prev.filter((job) => job.job_id !== jobId));
 
       toast({
         title: "Vídeo deletado",
@@ -433,24 +312,27 @@ export default function Editor() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon?: React.ReactNode }> = {
+    const statusConfig: Record<
+      string,
+      { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon?: React.ReactNode }
+    > = {
       pending: {
         label: "Pendente",
         variant: "secondary",
-        icon: <Settings className="w-3 h-3 animate-spin mr-1" />
+        icon: <Settings className="w-3 h-3 animate-spin mr-1" />,
       },
       processing: {
         label: "Processando",
         variant: "default",
-        icon: <Loader2 className="w-3 h-3 animate-spin mr-1" />
+        icon: <Loader2 className="w-3 h-3 animate-spin mr-1" />,
       },
       completed: {
         label: "Concluído",
-        variant: "outline"
+        variant: "outline",
       },
       failed: {
         label: "Falhou",
-        variant: "destructive"
+        variant: "destructive",
       },
     };
 
@@ -464,37 +346,20 @@ export default function Editor() {
   };
 
   const renderJobCard = (job: VideoJob) => (
-    <div
-      key={job.job_id}
-      className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow"
-    >
+    <div key={job.job_id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start">
         <div className="space-y-1 flex-1">
-          <p className="font-mono text-xs text-muted-foreground break-all">
-            {job.job_id}
-          </p>
+          <p className="font-mono text-xs text-muted-foreground break-all">{job.job_id}</p>
           {getStatusBadge(job.status)}
-          <p className="text-xs text-muted-foreground">
-            Criado: {new Date(job.created_at).toLocaleString('pt-BR')}
-          </p>
+          <p className="text-xs text-muted-foreground">Criado: {new Date(job.created_at).toLocaleString("pt-BR")}</p>
         </div>
         <div className="flex gap-2">
           {job.status === "completed" && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleDownload(job.job_id)}
-              title="Baixar vídeo"
-            >
+            <Button size="sm" variant="outline" onClick={() => handleDownload(job.job_id)} title="Baixar vídeo">
               <Download className="w-4 h-4" />
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleDelete(job.job_id)}
-            title="Deletar vídeo"
-          >
+          <Button size="sm" variant="outline" onClick={() => handleDelete(job.job_id)} title="Deletar vídeo">
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
@@ -515,9 +380,7 @@ export default function Editor() {
         </div>
       )}
 
-      {job.message && (
-        <p className="text-sm text-muted-foreground italic">{job.message}</p>
-      )}
+      {job.message && <p className="text-sm text-muted-foreground italic">{job.message}</p>}
     </div>
   );
 
@@ -548,12 +411,10 @@ export default function Editor() {
           <Card>
             <CardHeader>
               <CardTitle>Criar Novo Vídeo</CardTitle>
-              <CardDescription>
-                Preencha os campos abaixo para gerar seu vídeo viral com IA
-              </CardDescription>
+              <CardDescription>Preencha os campos abaixo para gerar seu vídeo viral com IA</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isGenerating}>
                 <div className="space-y-2">
                   <Label htmlFor="objetivo">Objetivo *</Label>
                   <Input
@@ -693,9 +554,7 @@ export default function Editor() {
           <Card>
             <CardHeader>
               <CardTitle>Meus Vídeos</CardTitle>
-              <CardDescription>
-                Acompanhe o progresso e gerencie seus vídeos
-              </CardDescription>
+              <CardDescription>Acompanhe o progresso e gerencie seus vídeos</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingVideos ? (
@@ -711,18 +570,10 @@ export default function Editor() {
               ) : (
                 <Tabs defaultValue="all" className="w-full">
                   <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="all">
-                      Todos ({jobs.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="processing">
-                      Processando ({processingJobs.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="completed">
-                      Concluídos ({completedJobs.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="failed">
-                      Falhos ({failedJobs.length})
-                    </TabsTrigger>
+                    <TabsTrigger value="all">Todos ({jobs.length})</TabsTrigger>
+                    <TabsTrigger value="processing">Processando ({processingJobs.length})</TabsTrigger>
+                    <TabsTrigger value="completed">Concluídos ({completedJobs.length})</TabsTrigger>
+                    <TabsTrigger value="failed">Falhos ({failedJobs.length})</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="all" className="space-y-4 mt-4">
@@ -733,9 +584,7 @@ export default function Editor() {
                     {processingJobs.length > 0 ? (
                       processingJobs.map(renderJobCard)
                     ) : (
-                      <p className="text-center py-8 text-muted-foreground">
-                        Nenhum vídeo em processamento
-                      </p>
+                      <p className="text-center py-8 text-muted-foreground">Nenhum vídeo em processamento</p>
                     )}
                   </TabsContent>
 
@@ -743,9 +592,7 @@ export default function Editor() {
                     {completedJobs.length > 0 ? (
                       completedJobs.map(renderJobCard)
                     ) : (
-                      <p className="text-center py-8 text-muted-foreground">
-                        Nenhum vídeo concluído
-                      </p>
+                      <p className="text-center py-8 text-muted-foreground">Nenhum vídeo concluído</p>
                     )}
                   </TabsContent>
 
@@ -753,9 +600,7 @@ export default function Editor() {
                     {failedJobs.length > 0 ? (
                       failedJobs.map(renderJobCard)
                     ) : (
-                      <p className="text-center py-8 text-muted-foreground">
-                        Nenhum vídeo falhou
-                      </p>
+                      <p className="text-center py-8 text-muted-foreground">Nenhum vídeo falhou</p>
                     )}
                   </TabsContent>
                 </Tabs>
@@ -772,25 +617,25 @@ export default function Editor() {
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-4 border rounded-lg">
-                <Badge variant="secondary" className="mb-2">EM BREVE</Badge>
+                <Badge variant="secondary" className="mb-2">
+                  EM BREVE
+                </Badge>
                 <h3 className="font-semibold mb-1">Edição Avançada</h3>
-                <p className="text-sm text-muted-foreground">
-                  Ajuste fino de cores, transições e efeitos especiais
-                </p>
+                <p className="text-sm text-muted-foreground">Ajuste fino de cores, transições e efeitos especiais</p>
               </div>
               <div className="p-4 border rounded-lg">
-                <Badge variant="secondary" className="mb-2">EM BREVE</Badge>
+                <Badge variant="secondary" className="mb-2">
+                  EM BREVE
+                </Badge>
                 <h3 className="font-semibold mb-1">Biblioteca de Músicas</h3>
-                <p className="text-sm text-muted-foreground">
-                  Adicione trilhas sonoras e efeitos de áudio
-                </p>
+                <p className="text-sm text-muted-foreground">Adicione trilhas sonoras e efeitos de áudio</p>
               </div>
               <div className="p-4 border rounded-lg">
-                <Badge variant="secondary" className="mb-2">EM BREVE</Badge>
+                <Badge variant="secondary" className="mb-2">
+                  EM BREVE
+                </Badge>
                 <h3 className="font-semibold mb-1">Templates Personalizados</h3>
-                <p className="text-sm text-muted-foreground">
-                  Crie e salve seus próprios templates de vídeo
-                </p>
+                <p className="text-sm text-muted-foreground">Crie e salve seus próprios templates de vídeo</p>
               </div>
             </div>
           </CardContent>
