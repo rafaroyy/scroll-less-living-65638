@@ -23,6 +23,8 @@ interface VideoJob {
 
 export default function Editor() {
   const [loading, setLoading] = useState(false);
+  const [loadingVideos, setLoadingVideos] = useState(true);
+  const [jobs, setJobs] = useState<VideoJob[]>([]);
   const [activePolls, setActivePolls] = useState<Set<string>>(new Set());
   const [username, setUsername] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -40,25 +42,20 @@ export default function Editor() {
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { userInfo, logout, videos, processingVideos, reloadVideos } = useAuth();
+  const { userInfo, logout } = useAuth();
   const intervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
-  
-  // Combina todos os vídeos para exibição
-  const allVideos = [...processingVideos, ...videos];
 
   // Carrega o username do usuário
   useEffect(() => {
     setUsername(userInfo?.username || userInfo?.email || "Usuário");
   }, [userInfo]);
 
-  // Inicia polling para jobs em processamento quando a lista de vídeos mudar
+  // Carrega vídeos existentes ao montar
   useEffect(() => {
-    processingVideos.forEach((job) => {
-      if ((job.status === "processing" || job.status === "pending") && !activePolls.has(job.job_id)) {
-        startPollingJob(job.job_id);
-      }
-    });
-  }, [processingVideos]);
+    setTimeout(() => {
+      loadUserVideos();
+    }, 150);
+  }, []);
 
   // Cleanup dos intervals ao desmontar
   useEffect(() => {
@@ -67,6 +64,62 @@ export default function Editor() {
       intervalsRef.current.clear();
     };
   }, []);
+
+  const loadUserVideos = async () => {
+    setLoadingVideos(true);
+    try {
+      const videos = await videoService.listVideos();
+
+      if (!Array.isArray(videos)) {
+        console.error("Os vídeos retornados do backend não são um array:", videos);
+        setJobs([]);
+        return;
+      }
+
+      const detailedJobs = await Promise.all(
+        videos.map(async (video) => {
+          try {
+            const status = await videoService.getJobStatus(video.job_id);
+            return {
+              job_id: status.job_id,
+              status: status.status,
+              progress: status.progress,
+              message: status.message,
+              created_at: status.created_at,
+              updated_at: status.updated_at
+            };
+          } catch (error) {
+            console.warn(`Falha ao buscar status do vídeo ${video.job_id}, utilizando dados básicos.`);
+            return {
+              job_id: video.job_id,
+              status: video.status,
+              progress: null,
+              message: null,
+              created_at: video.created_at,
+              updated_at: video.updated_at
+            };
+          }
+        })
+      );
+
+      setJobs(detailedJobs);
+
+      detailedJobs.forEach((job) => {
+        if (job.status === "pending" || job.status === "processing") {
+          pollJobStatus(job.job_id);
+        }
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar vídeos",
+        description: error.message || "Erro inesperado ao buscar vídeos",
+        variant: "destructive",
+      });
+      console.error("Erro ao carregar vídeos: ", error);
+    } finally {
+      setLoadingVideos(false);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -105,6 +158,15 @@ export default function Editor() {
       console.log("✅ Job criado com sucesso:", result.job_id);
       setCurrentJobId(result.job_id);
 
+      const newJob = {
+        job_id: result.job_id,
+        status: result.status,
+        progress: null,
+        message: result.message,
+        created_at: result.created_at
+      };
+      setJobs([newJob, ...jobs]);
+
       setFormData({
         objetivo: "",
         tema: "",
@@ -116,9 +178,6 @@ export default function Editor() {
         aspect_ratio: "9:16"
       });
 
-      // Recarrega a lista para incluir o novo job
-      await reloadVideos();
-      
       startPollingJob(result.job_id);
     } catch (error: any) {
       // Só mostra erro se não iniciou o polling (não obteve job_id)
@@ -161,6 +220,20 @@ export default function Editor() {
         const status = await videoService.getJobStatus(jobId);
         console.log(`📊 Status recebido:`, status.status);
 
+        setJobs(prevJobs =>
+          prevJobs.map(job =>
+            job.job_id === jobId
+              ? {
+                  ...job,
+                  status: status.status,
+                  progress: status.progress,
+                  message: status.message,
+                  updated_at: status.updated_at
+                }
+              : job
+          )
+        );
+
         if (status.status === "completed") {
           console.log("✅ Vídeo completado!");
           clearInterval(interval);
@@ -179,11 +252,11 @@ export default function Editor() {
 
           toast({
             title: "Vídeo pronto!",
-            description: "Ele já aparece automaticamente em Meus Vídeos.",
+            description: "Seu vídeo foi gerado com sucesso e está disponível na lista.",
           });
 
-          // Recarrega a lista de vídeos do contexto
-          await reloadVideos();
+          // Recarrega a lista de vídeos
+          await loadUserVideos();
         } else if (status.status === "failed") {
           console.log("❌ Vídeo falhou!");
           clearInterval(interval);
@@ -280,9 +353,7 @@ export default function Editor() {
   const handleDelete = async (jobId: string) => {
     try {
       await videoService.deleteVideo(jobId);
-      
-      // Recarrega a lista após deletar
-      await reloadVideos();
+      setJobs(jobs.filter(job => job.job_id !== jobId));
 
       toast({
         title: "Vídeo deletado",
@@ -386,9 +457,9 @@ export default function Editor() {
     </div>
   );
 
-  const completedJobs = videos;
-  const processingJobs = processingVideos.filter(job => job.status === "pending" || job.status === "processing");
-  const failedJobs = processingVideos.filter(job => job.status === "failed");
+  const completedJobs = jobs.filter(job => job.status === "completed");
+  const processingJobs = jobs.filter(job => job.status === "pending" || job.status === "processing");
+  const failedJobs = jobs.filter(job => job.status === "failed");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -572,7 +643,12 @@ export default function Editor() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {allVideos.length === 0 ? (
+              {loadingVideos ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+                  <p className="text-muted-foreground">Carregando vídeos...</p>
+                </div>
+              ) : jobs.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Video className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Nenhum vídeo criado ainda</p>
@@ -581,7 +657,7 @@ export default function Editor() {
                 <Tabs defaultValue="all" className="w-full">
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="all">
-                      Todos ({allVideos.length})
+                      Todos ({jobs.length})
                     </TabsTrigger>
                     <TabsTrigger value="processing">
                       Processando ({processingJobs.length})
@@ -595,7 +671,7 @@ export default function Editor() {
                   </TabsList>
 
                   <TabsContent value="all" className="space-y-4 mt-4">
-                    {allVideos.map(renderJobCard)}
+                    {jobs.map(renderJobCard)}
                   </TabsContent>
 
                   <TabsContent value="processing" className="space-y-4 mt-4">
