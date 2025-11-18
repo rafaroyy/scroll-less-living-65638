@@ -38,7 +38,7 @@ interface VideoListItem {
 }
 
 export const videoService = {
-  renderVideo: async (params: VideoRequest): Promise<{ started: boolean }> => {
+  renderVideo: async (params: VideoRequest): Promise<{ started: boolean; timeout?: boolean }> => {
     try {
       console.log("🎬 INICIANDO renderVideo (sem esperar resposta completa)");
       await apiClient.post("/videos/render", params);
@@ -55,8 +55,8 @@ export const videoService = {
         error.message?.includes("aborted");
 
       if (isTimeout) {
-        console.log("⚠️ Timeout/Cancelamento (ESPERADO) - job iniciado no backend");
-        return { started: true };
+        console.log("⚠️ Timeout/Cancelamento (ESPERADO) - job continua no backend");
+        return { started: true, timeout: true };
       }
 
       console.error("❌ ERRO REAL em renderVideo:", error);
