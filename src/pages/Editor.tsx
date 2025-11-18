@@ -112,22 +112,32 @@ export default function Editor() {
         })
       );
 
-      // Atualiza jobs: remove temporários e usa apenas dados reais do backend
+      // Atualiza jobs: mantém temporários até aparecerem reais
       setJobs(prev => {
-        const realJobIds = new Set(detailedJobs.map(j => j.job_id));
-        
-        // Remove TODOS os jobs temporários (backend agora tem o job real)
-        const withoutTemp = prev.filter(job => !job.temp);
-        
-        // Se houver jobs processando no backend, mantém apenas os reais
-        const hasProcessing = detailedJobs.some(j => 
+        // 1. pegar temporários
+        const temps = prev.filter(j => j.temp === true);
+
+        // 2. pegar do backend
+        const processingReal = detailedJobs.filter(j =>
           j.status === "pending" || j.status === "processing"
         );
-        
-        console.log("📋 Backend retornou:", detailedJobs.length, "jobs | Processando:", hasProcessing);
-        
-        // Retorna apenas os jobs do backend (mais atualizados)
-        return detailedJobs;
+        const completedReal = detailedJobs.filter(j =>
+          j.status === "completed"
+        );
+
+        // 3. remover temporários SOMENTE quando o vídeo real já existe
+        const tempsStillNeeded = temps.filter(temp =>
+          !completedReal.some(real => real.job_id === temp.job_id)
+        );
+
+        console.log("📋 Temporários:", temps.length, "| Reais processando:", processingReal.length, "| Reais concluídos:", completedReal.length, "| Temporários mantidos:", tempsStillNeeded.length);
+
+        // 4. resultado final
+        return [
+          ...tempsStillNeeded,   
+          ...processingReal,
+          ...completedReal
+        ];
       });
 
       // Parar polling global se não houver mais jobs processando
