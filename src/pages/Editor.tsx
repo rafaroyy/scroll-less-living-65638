@@ -237,18 +237,10 @@ export default function Editor() {
       const isTimeout = 
         error.code === "ERR_CANCELED" ||
         error.code === "ECONNABORTED" ||
-        error.code === "ERR_NETWORK" ||
-        error.code === "ETIMEDOUT" ||
-        error.code === "ECONNRESET" ||
         error.name === "AbortError" ||
-        error.name === "TimeoutError" ||
-        error.message === "canceled" ||
-        error.message?.toLowerCase().includes("cancel") ||
-        error.message?.toLowerCase().includes("timeout") ||
-        error.message?.toLowerCase().includes("aborted") ||
-        error.message?.toLowerCase().includes("network") ||
-        error.message?.toLowerCase().includes("connect") ||
-        !error.response; // Sem resposta do servidor = problema de rede
+        error.message?.includes("cancel") ||
+        error.message?.includes("timeout") ||
+        error.message?.includes("aborted");
 
       if (isTimeout) {
         console.log("⚠️ Timeout/cancelamento detectado - IGNORANDO (job continua no backend)");

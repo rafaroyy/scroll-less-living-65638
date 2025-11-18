@@ -48,25 +48,17 @@ export const videoService = {
       const isTimeout = 
         error.code === "ERR_CANCELED" ||
         error.code === "ECONNABORTED" ||
-        error.code === "ERR_NETWORK" ||
-        error.code === "ETIMEDOUT" ||
-        error.code === "ECONNRESET" ||
         error.name === "AbortError" ||
-        error.name === "TimeoutError" ||
         error.message === "canceled" ||
-        error.message?.toLowerCase().includes("cancel") ||
-        error.message?.toLowerCase().includes("timeout") ||
-        error.message?.toLowerCase().includes("aborted") ||
-        error.message?.toLowerCase().includes("network") ||
-        error.message?.toLowerCase().includes("connect") ||
-        !error.response; // Sem resposta do servidor = problema de rede
+        error.message?.includes("cancel") ||
+        error.message?.includes("timeout") ||
+        error.message?.includes("aborted");
 
       if (isTimeout) {
-        console.log("⚠️ Timeout/Cancelamento/Rede (ESPERADO) - job iniciado no backend");
+        console.log("⚠️ Timeout/Cancelamento (ESPERADO) - job iniciado no backend");
         return { started: true };
       }
 
-      // Apenas erros HTTP reais (4xx, 5xx com resposta do servidor)
       console.error("❌ ERRO REAL em renderVideo:", error);
       throw new Error(error.response?.data?.message || error.response?.data?.detail || "Erro ao criar vídeo");
     }
@@ -78,18 +70,10 @@ export const videoService = {
       const response = await apiClient.get<JobStatusResponse>(`/videos/status/${jobId}`);
       return response.data;
     } catch (error: any) {
-      // ⚠️ NÃO lançar erro - retornar dados parciais para não quebrar UI
-      console.log("⚠️ Falha momentânea ao buscar status do job", jobId, error);
-      return {
-        job_id: jobId,
-        status: "processing",
-        progress: null,
-        message: "Verificando status...",
-        result: null,
-        error: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+        throw new Error("Tempo limite excedido ao verificar status");
+      }
+      throw new Error(error.response?.data?.message || "Erro ao buscar status do vídeo");
     }
   },
 
@@ -136,9 +120,8 @@ export const videoService = {
       console.log("Videos processados:", videosList);
       return videosList || [];
     } catch (error: any) {
-      // ⚠️ NÃO lançar erro - retornar lista vazia para não quebrar UI
-      console.log("⚠️ Falha momentânea ao listar vídeos (normal durante render):", error);
-      return [];
+      console.error("Erro ao obter vídeos:", error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || "Erro ao listar vídeos");
     }
   },
 
