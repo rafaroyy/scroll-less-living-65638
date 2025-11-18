@@ -38,14 +38,18 @@ interface VideoListItem {
 }
 
 export const videoService = {
-  renderVideo: async (params: VideoRequest): Promise<JobResponse> => {
+  renderVideo: async (params: VideoRequest): Promise<{ started: boolean }> => {
     try {
-      const response = await apiClient.post<JobResponse>("/videos/render", params);
-      return response.data;
+      console.log("🎬 INICIANDO renderVideo (sem esperar resposta completa)");
+      await apiClient.post("/videos/render", params);
+      return { started: true };
     } catch (error: any) {
-      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
-        throw new Error("Tempo limite excedido. O servidor pode estar ocupado.");
+      // ERR_CANCELED é esperado porque o backend demora 2+ minutos
+      if (error.code === "ERR_CANCELED" || error.message === "canceled" || error.message?.includes("cancel")) {
+        console.log("⚠️ Request cancelada (esperado) - job iniciado no backend");
+        return { started: true };
       }
+      console.error("❌ ERRO REAL em renderVideo:", error);
       throw new Error(error.response?.data?.message || error.response?.data?.detail || "Erro ao criar vídeo");
     }
   },
@@ -65,11 +69,14 @@ export const videoService = {
 
   downloadVideo: async (jobId: string): Promise<Blob> => {
     try {
+      console.log("📥 BAIXANDO vídeo:", jobId);
       const response = await apiClient.get(`/videos/download/${jobId}`, {
         responseType: 'blob'
       });
+      console.log("✅ Blob recebido:", response.data.size, "bytes");
       return response.data;
     } catch (error: any) {
+      console.error("❌ ERRO ao baixar vídeo:", error);
       throw new Error(error.response?.data?.message || "Erro ao baixar vídeo");
     }
   },

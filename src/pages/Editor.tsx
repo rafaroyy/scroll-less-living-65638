@@ -19,6 +19,7 @@ interface VideoJob {
   message: string | null;
   created_at: string;
   updated_at?: string;
+  temp?: boolean;
 }
 
 export default function Editor() {
@@ -44,6 +45,7 @@ export default function Editor() {
   const navigate = useNavigate();
   const { userInfo, logout } = useAuth();
   const intervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const globalPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Estados computados para as abas
   const processingJobs = jobs.filter(job => job.status === "pending" || job.status === "processing");
@@ -67,6 +69,9 @@ export default function Editor() {
     return () => {
       intervalsRef.current.forEach((interval) => clearInterval(interval));
       intervalsRef.current.clear();
+      if (globalPollingRef.current) {
+        clearInterval(globalPollingRef.current);
+      }
     };
   }, []);
 
@@ -107,7 +112,26 @@ export default function Editor() {
         })
       );
 
-      setJobs(detailedJobs);
+      // Remove jobs temporários que agora têm equivalentes reais
+      setJobs(prev => {
+        const realJobIds = new Set(detailedJobs.map(j => j.job_id));
+        
+        // Remove todos os jobs temp
+        const withoutTemp = prev.filter(job => !job.temp);
+        
+        // Merge: detailedJobs vem primeiro (mais recente), depois jobs sem temp
+        const merged: VideoJob[] = [...detailedJobs];
+        
+        // Adiciona jobs antigos que não estão nos novos
+        withoutTemp.forEach(oldJob => {
+          if (!realJobIds.has(oldJob.job_id)) {
+            merged.push(oldJob);
+          }
+        });
+        
+        console.log("📋 Jobs após merge:", merged.length, "jobs");
+        return merged;
+      });
 
       detailedJobs.forEach((job) => {
         if (job.status === "pending" || job.status === "processing") {
@@ -135,6 +159,19 @@ export default function Editor() {
     navigate("/auth");
   };
 
+  const startGlobalPolling = () => {
+    if (globalPollingRef.current) {
+      console.log("⏭️ Polling global já está rodando");
+      return;
+    }
+
+    console.log("🔄 INICIANDO POLLING GLOBAL");
+    globalPollingRef.current = setInterval(() => {
+      console.log("🔄 Polling global: atualizando lista de vídeos...");
+      loadUserVideos();
+    }, 10000); // 10 segundos
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -147,28 +184,39 @@ export default function Editor() {
       return;
     }
 
+    console.log("🎬 INICIANDO handleSubmit");
     setLoading(true);
     setIsGenerating(true);
+
+    // Criar job temporário IMEDIATAMENTE
+    const tempId = `temp-${Date.now()}`;
+    console.log("➕ CRIANDO JOB TEMPORÁRIO:", tempId);
     
-    try {
-      const result = await videoService.renderVideo(formData);
-      const jobId = result.job_id;
-
-      if (!jobId) {
-        throw new Error("job_id não retornado pela API");
-      }
-      
-      setCurrentJobId(jobId);
-
-      const newJob = {
-        job_id: jobId,
-        status: result.status ?? "queued",
+    setJobs(prev => [
+      {
+        job_id: tempId,
+        status: "processing",
         progress: null,
-        message: result.message || "Vídeo na fila",
-        created_at: result.created_at || new Date().toISOString()
-      };
+        message: "Iniciando geração...",
+        created_at: new Date().toISOString(),
+        temp: true
+      },
+      ...prev
+    ]);
+
+    try {
+      console.log("📡 ENVIANDO REQUEST para /videos/render (pode cancelar, é normal)");
+      const result = await videoService.renderVideo(formData);
       
-      setJobs([newJob, ...jobs]);
+      console.log("✅ REQUEST ENVIADA (job iniciado no backend):", result);
+
+      // Iniciar polling global
+      startGlobalPolling();
+
+      toast({
+        title: "Vídeo em processamento",
+        description: "Seu vídeo está sendo gerado. Aguarde, ele aparecerá automaticamente.",
+      });
 
       setFormData({
         objetivo: "",
@@ -180,23 +228,20 @@ export default function Editor() {
         cenas: 5,
         aspect_ratio: "9:16"
       });
-
-      startPollingJob(jobId);
-      setLoading(false);
-
-      toast({
-        title: "Vídeo em processamento",
-        description: "Seu vídeo aparecerá automaticamente em 'Meus Vídeos' quando concluído.",
-      });
-      
     } catch (error: any) {
+      console.error("❌ ERRO NO HANDLESUBMIT:", error);
+      
+      // Remove job temporário em caso de erro REAL
+      setJobs(prev => prev.filter(j => j.job_id !== tempId));
+      
       toast({
         title: "Erro ao criar vídeo",
-        description: error.message || "Não foi possível criar o vídeo. Tente novamente.",
+        description: error.message || "Tente novamente",
         variant: "destructive",
       });
-      
       setIsGenerating(false);
+    } finally {
+      console.log("🏁 FINALIZANDO handleSubmit");
       setLoading(false);
     }
   };
@@ -333,28 +378,32 @@ export default function Editor() {
 
   const handleDownload = async (jobId: string) => {
     try {
+      console.log("📥 INICIANDO DOWNLOAD:", jobId);
       const blob = await videoService.downloadVideo(jobId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      console.log("✅ BLOB RECEBIDO:", blob.size, "bytes");
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `video-${jobId}.mp4`;
-      document.body.appendChild(a);
+      a.download = `${jobId}.mp4`;
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      URL.revokeObjectURL(url);
 
       toast({
         title: "Download iniciado",
-        description: "Seu vídeo está sendo baixado.",
+        description: "O vídeo está sendo baixado.",
       });
     } catch (error: any) {
+      console.error("❌ ERRO AO BAIXAR:", error);
       toast({
-        title: "Erro ao baixar",
-        description: error.message,
+        title: "Erro ao baixar vídeo",
+        description: error.message || "Tente novamente",
         variant: "destructive",
       });
     }
   };
+
 
   const handleDelete = async (jobId: string) => {
     try {
