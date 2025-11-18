@@ -245,14 +245,8 @@ export default function Editor() {
       if (isTimeout) {
         console.log("⚠️ Timeout/cancelamento detectado - IGNORANDO (job continua no backend)");
         // NÃO remover job temporário
-        // NÃO mostrar erro
+        // NÃO mostrar erro/toast
         // Polling global já foi iniciado acima
-        
-        toast({
-          title: "Vídeo em processamento",
-          description: "Seu vídeo está sendo gerado. Ele aparecerá automaticamente quando pronto.",
-        });
-        
         return; // Sair sem remover job ou mostrar erro
       }
 
