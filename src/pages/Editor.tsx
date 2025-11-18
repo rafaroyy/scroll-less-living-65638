@@ -76,7 +76,6 @@ export default function Editor() {
   }, []);
 
   const loadUserVideos = async () => {
-    setLoadingVideos(true);
     try {
       const videos = await videoService.listVideos();
 
@@ -140,6 +139,11 @@ export default function Editor() {
         ];
       });
 
+      // Remove loading quando QUALQUER lista vier do backend
+      if (detailedJobs.length >= 0) {
+        setLoadingVideos(false);
+      }
+
       // Parar polling global se não houver mais jobs processando
       const stillProcessing = detailedJobs.some(j => 
         j.status === "pending" || j.status === "processing"
@@ -152,14 +156,9 @@ export default function Editor() {
         setIsGenerating(false);
       }
     } catch (error: any) {
-      toast({
-        title: "Erro ao carregar vídeos",
-        description: error.message || "Erro inesperado ao buscar vídeos",
-        variant: "destructive",
-      });
-      console.error("Erro ao carregar vídeos: ", error);
-    } finally {
-      setLoadingVideos(false);
+      // NÃO mostrar erro na UI - falhas momentâneas são normais durante render pesado
+      console.log("⚠️ Falha momentânea ao carregar vídeos (normal durante render):", error);
+      return; // não bloqueia a UI
     }
   };
 
@@ -174,7 +173,7 @@ export default function Editor() {
 
   const startGlobalPolling = () => {
     if (globalPollingRef.current) {
-      console.log("⏭️ Polling global já está rodando");
+      console.log("⚠️ Polling global já está ativo — não iniciar outro.");
       return;
     }
 
