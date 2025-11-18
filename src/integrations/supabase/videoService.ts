@@ -44,11 +44,21 @@ export const videoService = {
       await apiClient.post("/videos/render", params);
       return { started: true };
     } catch (error: any) {
-      // ERR_CANCELED é esperado porque o backend demora 2+ minutos
-      if (error.code === "ERR_CANCELED" || error.message === "canceled" || error.message?.includes("cancel")) {
-        console.log("⚠️ Request cancelada (esperado) - job iniciado no backend");
+      // Timeout e cancelamento são ESPERADOS - backend continua processando
+      const isTimeout = 
+        error.code === "ERR_CANCELED" ||
+        error.code === "ECONNABORTED" ||
+        error.name === "AbortError" ||
+        error.message === "canceled" ||
+        error.message?.includes("cancel") ||
+        error.message?.includes("timeout") ||
+        error.message?.includes("aborted");
+
+      if (isTimeout) {
+        console.log("⚠️ Timeout/Cancelamento (ESPERADO) - job iniciado no backend");
         return { started: true };
       }
+
       console.error("❌ ERRO REAL em renderVideo:", error);
       throw new Error(error.response?.data?.message || error.response?.data?.detail || "Erro ao criar vídeo");
     }
