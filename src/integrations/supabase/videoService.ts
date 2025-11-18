@@ -56,10 +56,33 @@ export const videoService = {
       console.log("═══════════════════════════════════════════════════════");
       console.log("✅ VIDEO SERVICE - RESPOSTA SUCESSO");
       console.log("═══════════════════════════════════════════════════════");
+      console.log("📦 RESPONSE COMPLETO:", JSON.stringify(response, null, 2));
       console.log("📦 RESPONSE DATA:", JSON.stringify(response.data, null, 2));
+      console.log("🔍 TIPO DE response.data:", typeof response.data);
+      console.log("🔍 É OBJETO?", response.data !== null && typeof response.data === 'object');
       console.log("═══════════════════════════════════════════════════════");
       
-      return response.data;
+      // Valida se o response.data existe e tem job_id
+      if (!response.data) {
+        console.error("❌ response.data é null ou undefined");
+        throw new Error("Resposta da API inválida: response.data está vazio");
+      }
+      
+      const jobData = response.data;
+      console.log("🔍 VERIFICANDO job_id:");
+      console.log("  - jobData.job_id:", jobData.job_id);
+      console.log("  - Tipo:", typeof jobData.job_id);
+      
+      if (!jobData.job_id) {
+        console.error("❌ job_id não encontrado em response.data");
+        console.error("📦 Estrutura recebida:", Object.keys(jobData));
+        throw new Error("job_id não retornado pela API");
+      }
+      
+      console.log("✅ job_id VALIDADO:", jobData.job_id);
+      console.log("✅ RETORNANDO:", JSON.stringify(jobData, null, 2));
+      
+      return jobData;
     } catch (error: any) {
       console.log("═══════════════════════════════════════════════════════");
       console.log("❌ VIDEO SERVICE - ERRO NA REQUISIÇÃO");

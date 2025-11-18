@@ -73,18 +73,39 @@ class ApiClient {
     // Interceptor para logar respostas
     this.client.interceptors.response.use(
       (response) => {
-        console.log("🌐 API CLIENT - RESPONSE INTERCEPTOR (SUCCESS):");
-        console.log("  STATUS:", response.status);
-        console.log("  DATA:", response.data);
+        console.log("═══════════════════════════════════════════════════════");
+        console.log("🌐 API CLIENT - RESPONSE INTERCEPTOR (SUCCESS)");
+        console.log("═══════════════════════════════════════════════════════");
+        console.log("📍 URL:", response.config.url);
+        console.log("📊 STATUS:", response.status);
+        console.log("📊 STATUS TEXT:", response.statusText);
+        console.log("📦 RESPONSE.DATA COMPLETO:", JSON.stringify(response.data, null, 2));
+        console.log("🔍 TIPO response.data:", typeof response.data);
+        console.log("🔍 É OBJETO?", response.data !== null && typeof response.data === 'object');
+        
+        if (response.data && typeof response.data === 'object') {
+          console.log("🔍 KEYS de response.data:", Object.keys(response.data));
+        }
+        console.log("═══════════════════════════════════════════════════════");
         return response;
       },
       (error) => {
-        console.log("🌐 API CLIENT - RESPONSE INTERCEPTOR (ERROR):");
+        console.log("═══════════════════════════════════════════════════════");
+        console.log("🌐 API CLIENT - RESPONSE INTERCEPTOR (ERROR)");
+        console.log("═══════════════════════════════════════════════════════");
         if (error.response) {
-          console.log("  STATUS:", error.response.status);
-          console.log("  DATA:", error.response.data);
-          console.log("  HEADERS:", error.response.headers);
+          console.log("📊 STATUS:", error.response.status);
+          console.log("📊 STATUS TEXT:", error.response.statusText);
+          console.log("📦 ERROR DATA:", JSON.stringify(error.response.data, null, 2));
+          console.log("📋 HEADERS:", error.response.headers);
+        } else if (error.request) {
+          console.log("📡 REQUEST FEITO MAS SEM RESPOSTA");
+          console.log("🔴 ERROR CODE:", error.code);
+          console.log("🔴 ERROR MESSAGE:", error.message);
+        } else {
+          console.log("🔧 ERRO NA CONFIGURAÇÃO:", error.message);
         }
+        console.log("═══════════════════════════════════════════════════════");
         return Promise.reject(error);
       },
     );
