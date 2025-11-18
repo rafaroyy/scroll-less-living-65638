@@ -79,7 +79,7 @@ export default function Editor() {
       return;
     }
 
-    const TOTAL_DURATION = 150000; // 150s
+    const TOTAL_DURATION = 300000; // 300s (5 minutos)
     const INTERVAL = 100; // atualiza a cada 100ms
     let elapsed = 0;
 
@@ -584,7 +584,7 @@ export default function Editor() {
                         />
                       </div>
 
-                      <p className="text-xs text-muted-foreground">Tempo estimado: ~2 minutos e 30 segundos</p>
+                      <p className="text-xs text-muted-foreground">Tempo estimado: ~5 minutos</p>
                     </div>
                   )}
 
