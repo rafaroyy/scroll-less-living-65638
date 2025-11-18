@@ -114,28 +114,19 @@ export default function Editor() {
       // Atualiza jobs: mantém temporários até aparecerem reais
       setJobs(prev => {
         // 1. pegar temporários
-        const temps = prev.filter(j => j.temp === true);
+        const temps = prev.filter(j => j.temp);
 
-        // 2. pegar do backend
-        const processingReal = detailedJobs.filter(j =>
-          j.status === "pending" || j.status === "processing"
-        );
-        const completedReal = detailedJobs.filter(j =>
-          j.status === "completed"
+        // 2. remover temporários SOMENTE quando o vídeo real já existe
+        const tempsStillValid = temps.filter(temp =>
+          !detailedJobs.some(real => real.job_id === temp.job_id)
         );
 
-        // 3. remover temporários SOMENTE quando o vídeo real já existe
-        const tempsStillNeeded = temps.filter(temp =>
-          !completedReal.some(real => real.job_id === temp.job_id)
-        );
+        console.log("📋 Temporários mantidos:", tempsStillValid.length, "| Jobs do backend:", detailedJobs.length);
 
-        console.log("📋 Temporários:", temps.length, "| Reais processando:", processingReal.length, "| Reais concluídos:", completedReal.length, "| Temporários mantidos:", tempsStillNeeded.length);
-
-        // 4. resultado final
+        // 3. resultado final
         return [
-          ...tempsStillNeeded,   
-          ...processingReal,
-          ...completedReal
+          ...tempsStillValid,
+          ...detailedJobs
         ];
       });
 
