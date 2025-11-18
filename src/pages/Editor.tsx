@@ -212,13 +212,23 @@ export default function Editor() {
 
     try {
       console.log("📡 ENVIANDO REQUEST para /videos/render (timeout é esperado)");
-      await videoService.renderVideo(formData);
+      const result = await videoService.renderVideo(formData);
       console.log("✅ POST enviado (job iniciado no backend)");
 
-      toast({
-        title: "Vídeo em processamento",
-        description: "Seu vídeo está sendo gerado. Ele aparecerá automaticamente quando pronto.",
-      });
+      // Se for timeout, mostrar mensagem amigável
+      if (result.timeout) {
+        console.log("⚠️ Timeout detectado - job continua no backend");
+        toast({
+          title: "Seu vídeo ainda está sendo gerado",
+          description: "O servidor está levando um pouco mais de tempo, mas o vídeo continua em processamento. Ele vai aparecer em 'Concluídos' assim que estiver pronto.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Vídeo em processamento",
+          description: "Seu vídeo está sendo gerado. Ele aparecerá automaticamente quando pronto.",
+        });
+      }
 
       setFormData({
         objetivo: "",
@@ -231,27 +241,9 @@ export default function Editor() {
         aspect_ratio: "9:16"
       });
     } catch (error: any) {
-      console.error("❌ ERRO NO HANDLESUBMIT:", error);
+      console.error("❌ ERRO REAL NO HANDLESUBMIT:", error);
       
-      // Verificar se é timeout/cancelamento (NÃO é erro do job)
-      const isTimeout = 
-        error.code === "ERR_CANCELED" ||
-        error.code === "ECONNABORTED" ||
-        error.name === "AbortError" ||
-        error.message?.includes("cancel") ||
-        error.message?.includes("timeout") ||
-        error.message?.includes("aborted");
-
-      if (isTimeout) {
-        console.log("⚠️ Timeout/cancelamento detectado - IGNORANDO (job continua no backend)");
-        // NÃO remover job temporário
-        // NÃO mostrar erro/toast
-        // Polling global já foi iniciado acima
-        return; // Sair sem remover job ou mostrar erro
-      }
-
       // Apenas para erros REAIS (4xx, 5xx do backend):
-      console.error("❌ ERRO REAL da API:", error);
       setJobs(prev => prev.filter(j => j.job_id !== tempId));
       
       toast({
@@ -260,9 +252,6 @@ export default function Editor() {
         variant: "destructive",
       });
       setIsGenerating(false);
-    } finally {
-      console.log("🏁 FINALIZANDO handleSubmit");
-      setLoading(false);
     }
   };
 
