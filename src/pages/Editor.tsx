@@ -147,57 +147,29 @@ export default function Editor() {
       return;
     }
 
-    // Ativa o estado de loading ANTES da request
     setLoading(true);
     setIsGenerating(true);
     
     try {
-      console.log("═══════════════════════════════════════════════════════");
-      console.log("🎬 EDITOR - INICIANDO CRIAÇÃO DE VÍDEO");
-      console.log("═══════════════════════════════════════════════════════");
-      
-      toast({
-        title: "Criando vídeo...",
-        description: "Seu vídeo está sendo preparado e aparecerá na aba 'Processando'.",
-      });
-
-      // Chama a API e obtém o job_id
-      console.log("📡 Chamando videoService.renderVideo...");
       const result = await videoService.renderVideo(formData);
-      
-      console.log("═══════════════════════════════════════════════════════");
-      console.log("✅ EDITOR - RESULTADO RECEBIDO");
-      console.log("═══════════════════════════════════════════════════════");
-      console.log("📦 RESULT COMPLETO:", JSON.stringify(result, null, 2));
-      console.log("🔍 TIPO DE result:", typeof result);
-      console.log("🔍 result.job_id:", result?.job_id);
-      console.log("═══════════════════════════════════════════════════════");
-
-      // VALIDAÇÃO CRÍTICA: Verifica se job_id existe
-      if (!result || !result.job_id) {
-        console.error("❌ EDITOR - JOB_ID NÃO ENCONTRADO");
-        console.error("📦 result recebido:", result);
-        throw new Error("job_id não retornado pela API. Estrutura recebida: " + JSON.stringify(result));
-      }
-
       const jobId = result.job_id;
-      console.log("✅ EDITOR - job_id VALIDADO:", jobId);
+
+      if (!jobId) {
+        throw new Error("job_id não retornado pela API");
+      }
       
       setCurrentJobId(jobId);
 
-      // Adiciona imediatamente à lista de "Processando"
       const newJob = {
         job_id: jobId,
-        status: result.status || "pending",
+        status: result.status ?? "queued",
         progress: null,
         message: result.message || "Vídeo na fila",
         created_at: result.created_at || new Date().toISOString()
       };
       
-      console.log("➕ EDITOR - Adicionando job à lista:", newJob);
       setJobs([newJob, ...jobs]);
 
-      // Limpa o formulário
       setFormData({
         objetivo: "",
         tema: "",
@@ -209,31 +181,20 @@ export default function Editor() {
         aspect_ratio: "9:16"
       });
 
-      // Inicia o polling sem travar
-      console.log("🔄 EDITOR - Iniciando polling para job:", jobId);
       startPollingJob(jobId);
-      
-      // Libera o botão imediatamente após iniciar o polling
       setLoading(false);
-      console.log("✅ EDITOR - Botão liberado, polling iniciado");
+
+      toast({
+        title: "Vídeo em processamento",
+        description: "Seu vídeo aparecerá automaticamente em 'Meus Vídeos' quando concluído.",
+      });
       
     } catch (error: any) {
-      console.log("═══════════════════════════════════════════════════════");
-      console.error("❌ EDITOR - ERRO AO CRIAR VÍDEO");
-      console.log("═══════════════════════════════════════════════════════");
-      console.error("🔴 ERRO COMPLETO:", error);
-      console.error("🔴 ERRO MENSAGEM:", error?.message);
-      console.error("🔴 ERRO STACK:", error?.stack);
-      console.log("═══════════════════════════════════════════════════════");
-      
-      // Só mostra erro se não obteve job_id
-      if (!currentJobId) {
-        toast({
-          title: "Erro ao criar vídeo",
-          description: error.message || "Não foi possível criar o vídeo. Tente novamente.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Erro ao criar vídeo",
+        description: error.message || "Não foi possível criar o vídeo. Tente novamente.",
+        variant: "destructive",
+      });
       
       setIsGenerating(false);
       setLoading(false);
