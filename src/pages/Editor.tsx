@@ -45,6 +45,11 @@ export default function Editor() {
   const { userInfo, logout } = useAuth();
   const intervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
+  // Estados computados para as abas
+  const processingJobs = jobs.filter(job => job.status === "pending" || job.status === "processing");
+  const completedJobs = jobs.filter(job => job.status === "completed");
+  const failedJobs = jobs.filter(job => job.status === "failed");
+
   // Carrega o username do usuário
   useEffect(() => {
     setUsername(userInfo?.username || userInfo?.email || "Usuário");
@@ -142,6 +147,7 @@ export default function Editor() {
       return;
     }
 
+    // Ativa o estado de loading ANTES da request
     setLoading(true);
     setIsGenerating(true);
     
@@ -149,24 +155,27 @@ export default function Editor() {
       console.log("🎬 Iniciando criação de vídeo...");
       
       toast({
-        title: "Gerando vídeo...",
-        description: "Seu vídeo está sendo gerado! Isso normalmente leva até 1 minuto.",
+        title: "Criando vídeo...",
+        description: "Seu vídeo está sendo preparado e aparecerá na aba 'Processando'.",
       });
 
+      // Chama a API e obtém o job_id
       const result = await videoService.renderVideo(formData);
 
       console.log("✅ Job criado com sucesso:", result.job_id);
       setCurrentJobId(result.job_id);
 
+      // Adiciona imediatamente à lista de "Processando"
       const newJob = {
         job_id: result.job_id,
-        status: result.status,
+        status: result.status || "pending",
         progress: null,
-        message: result.message,
-        created_at: result.created_at
+        message: result.message || "Vídeo na fila",
+        created_at: result.created_at || new Date().toISOString()
       };
       setJobs([newJob, ...jobs]);
 
+      // Limpa o formulário
       setFormData({
         objetivo: "",
         tema: "",
@@ -178,9 +187,15 @@ export default function Editor() {
         aspect_ratio: "9:16"
       });
 
+      // Inicia o polling sem travar
       startPollingJob(result.job_id);
+      
+      // Libera o botão imediatamente após iniciar o polling
+      setLoading(false);
     } catch (error: any) {
-      // Só mostra erro se não iniciou o polling (não obteve job_id)
+      console.error("❌ Erro ao criar vídeo:", error);
+      
+      // Só mostra erro se não obteve job_id
       if (!currentJobId) {
         toast({
           title: "Erro ao criar vídeo",
@@ -188,9 +203,8 @@ export default function Editor() {
           variant: "destructive",
         });
       }
-      console.error("❌ Erro ao criar vídeo:", error);
+      
       setIsGenerating(false);
-    } finally {
       setLoading(false);
     }
   };
@@ -252,7 +266,7 @@ export default function Editor() {
 
           toast({
             title: "Vídeo pronto!",
-            description: "Seu vídeo foi gerado com sucesso e está disponível na lista.",
+            description: "Seu vídeo foi gerado e já está disponível em 'Meus Vídeos'.",
           });
 
           // Recarrega a lista de vídeos
@@ -274,8 +288,8 @@ export default function Editor() {
           }
 
           toast({
-            title: "Erro no processamento",
-            description: status.error || "Falha ao processar vídeo",
+            title: "Erro na geração",
+            description: status.error || "O vídeo falhou ao ser processado.",
             variant: "destructive",
           });
         } else if (pollCount >= maxPolls) {
@@ -295,9 +309,9 @@ export default function Editor() {
           }
 
           toast({
-            title: "Tempo limite excedido",
-            description: "O processamento está demorando mais que o esperado. Verifique a lista de vídeos.",
-            variant: "destructive",
+            title: "Demora incomum",
+            description: "O vídeo está levando mais tempo que o normal. Tente verificar novamente em 'Meus Vídeos' em alguns instantes.",
+            variant: "default",
           });
         }
       } catch (error) {
@@ -457,10 +471,6 @@ export default function Editor() {
     </div>
   );
 
-  const completedJobs = jobs.filter(job => job.status === "completed");
-  const processingJobs = jobs.filter(job => job.status === "pending" || job.status === "processing");
-  const failedJobs = jobs.filter(job => job.status === "failed");
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
@@ -605,16 +615,11 @@ export default function Editor() {
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full" disabled={loading || isGenerating}>
+                  <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Criando job...
-                      </>
-                    ) : isGenerating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Gerando vídeo...
                       </>
                     ) : (
                       <>
@@ -623,10 +628,10 @@ export default function Editor() {
                       </>
                     )}
                   </Button>
-                  {isGenerating && (
+                  {processingJobs.length > 0 && (
                     <div className="text-sm text-muted-foreground text-center mt-2 space-y-1">
-                      <p>Seu vídeo está sendo gerado! Isso pode levar até 1 minuto.</p>
-                      <p>Você será notificado automaticamente quando estiver pronto.</p>
+                      <p>Seu vídeo está sendo gerado! Isso pode levar até 2 minutos.</p>
+                      <p>Você verá ele sair de "Processando" e aparecer em "Meus vídeos" automaticamente.</p>
                     </div>
                   )}
                 </div>
