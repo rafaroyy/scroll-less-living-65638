@@ -93,32 +93,6 @@ class ApiClient {
         console.log("═══════════════════════════════════════════════════════");
         console.log("🌐 API CLIENT - RESPONSE INTERCEPTOR (ERROR)");
         console.log("═══════════════════════════════════════════════════════");
-        
-        // Detectar timeout/cancelamento UNIVERSAL
-        const isTimeout = 
-          error.code === "ERR_CANCELED" ||
-          error.code === "ECONNABORTED" ||
-          error.code === "ERR_NETWORK" ||
-          error.name === "AbortError" ||
-          error.message === "canceled" ||
-          error.message?.includes("cancel") ||
-          error.message?.includes("timeout") ||
-          error.message?.includes("aborted") ||
-          error.message?.includes("Network Error");
-
-        if (isTimeout) {
-          console.log("⚠️ TIMEOUT/CANCELAMENTO DETECTADO (ESPERADO) - neutralizando erro");
-          console.log("📍 URL:", error.config?.url);
-          console.log("🔴 ERROR CODE:", error.code);
-          console.log("🔴 ERROR MESSAGE:", error.message);
-          
-          // Marcar erro como "esperado" para que serviços possam tratá-lo
-          error.isTimeout = true;
-          error.isSanitized = true;
-          console.log("═══════════════════════════════════════════════════════");
-          return Promise.reject(error);
-        }
-        
         if (error.response) {
           console.log("📊 STATUS:", error.response.status);
           console.log("📊 STATUS TEXT:", error.response.statusText);

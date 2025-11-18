@@ -70,10 +70,8 @@ export const videoService = {
       const response = await apiClient.get<JobStatusResponse>(`/videos/status/${jobId}`);
       return response.data;
     } catch (error: any) {
-      // Se for timeout, apenas logar e propagar erro silenciosamente
-      if (error.isTimeout || error.isSanitized) {
-        console.log("⚠️ Timeout ao buscar status do job (normal) - ignorando");
-        throw error; // propaga mas sem transformar em Error
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+        throw new Error("Tempo limite excedido ao verificar status");
       }
       throw new Error(error.response?.data?.message || "Erro ao buscar status do vídeo");
     }
@@ -122,11 +120,6 @@ export const videoService = {
       console.log("Videos processados:", videosList);
       return videosList || [];
     } catch (error: any) {
-      // Se for timeout/cancelamento, apenas logar (NÃO mostrar erro na UI)
-      if (error.isTimeout || error.isSanitized) {
-        console.log("⚠️ Timeout ao listar vídeos (normal durante processamento pesado) - ignorando");
-        return []; // retorna lista vazia silenciosamente
-      }
       console.error("Erro ao obter vídeos:", error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Erro ao listar vídeos");
     }
