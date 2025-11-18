@@ -112,32 +112,35 @@ export default function Editor() {
         })
       );
 
-      // Remove jobs temporários que agora têm equivalentes reais
+      // Atualiza jobs: remove temporários e usa apenas dados reais do backend
       setJobs(prev => {
         const realJobIds = new Set(detailedJobs.map(j => j.job_id));
         
-        // Remove todos os jobs temp
+        // Remove TODOS os jobs temporários (backend agora tem o job real)
         const withoutTemp = prev.filter(job => !job.temp);
         
-        // Merge: detailedJobs vem primeiro (mais recente), depois jobs sem temp
-        const merged: VideoJob[] = [...detailedJobs];
+        // Se houver jobs processando no backend, mantém apenas os reais
+        const hasProcessing = detailedJobs.some(j => 
+          j.status === "pending" || j.status === "processing"
+        );
         
-        // Adiciona jobs antigos que não estão nos novos
-        withoutTemp.forEach(oldJob => {
-          if (!realJobIds.has(oldJob.job_id)) {
-            merged.push(oldJob);
-          }
-        });
+        console.log("📋 Backend retornou:", detailedJobs.length, "jobs | Processando:", hasProcessing);
         
-        console.log("📋 Jobs após merge:", merged.length, "jobs");
-        return merged;
+        // Retorna apenas os jobs do backend (mais atualizados)
+        return detailedJobs;
       });
 
-      detailedJobs.forEach((job) => {
-        if (job.status === "pending" || job.status === "processing") {
-          pollJobStatus(job.job_id);
-        }
-      });
+      // Parar polling global se não houver mais jobs processando
+      const stillProcessing = detailedJobs.some(j => 
+        j.status === "pending" || j.status === "processing"
+      );
+      
+      if (!stillProcessing && globalPollingRef.current) {
+        console.log("⏸️ Parando polling global - nenhum vídeo processando");
+        clearInterval(globalPollingRef.current);
+        globalPollingRef.current = null;
+        setIsGenerating(false);
+      }
     } catch (error: any) {
       toast({
         title: "Erro ao carregar vídeos",
@@ -165,11 +168,11 @@ export default function Editor() {
       return;
     }
 
-    console.log("🔄 INICIANDO POLLING GLOBAL");
+    console.log("🔄 INICIANDO POLLING GLOBAL (a cada 8s)");
     globalPollingRef.current = setInterval(() => {
-      console.log("🔄 Polling global: atualizando lista de vídeos...");
+      console.log("🔄 Polling global: verificando status dos vídeos...");
       loadUserVideos();
-    }, 10000); // 10 segundos
+    }, 8000); // 8 segundos
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -188,7 +191,7 @@ export default function Editor() {
     setLoading(true);
     setIsGenerating(true);
 
-    // Criar job temporário IMEDIATAMENTE
+    // Criar job temporário IMEDIATAMENTE (sem depender de job_id do POST)
     const tempId = `temp-${Date.now()}`;
     console.log("➕ CRIANDO JOB TEMPORÁRIO:", tempId);
     
@@ -197,25 +200,24 @@ export default function Editor() {
         job_id: tempId,
         status: "processing",
         progress: null,
-        message: "Iniciando geração...",
+        message: "Iniciando geração do vídeo...",
         created_at: new Date().toISOString(),
         temp: true
       },
       ...prev
     ]);
 
-    try {
-      console.log("📡 ENVIANDO REQUEST para /videos/render (pode cancelar, é normal)");
-      const result = await videoService.renderVideo(formData);
-      
-      console.log("✅ REQUEST ENVIADA (job iniciado no backend):", result);
+    // Iniciar polling global IMEDIATAMENTE
+    startGlobalPolling();
 
-      // Iniciar polling global
-      startGlobalPolling();
+    try {
+      console.log("📡 ENVIANDO REQUEST para /videos/render (timeout é esperado)");
+      await videoService.renderVideo(formData);
+      console.log("✅ POST enviado (job iniciado no backend)");
 
       toast({
         title: "Vídeo em processamento",
-        description: "Seu vídeo está sendo gerado. Aguarde, ele aparecerá automaticamente.",
+        description: "Seu vídeo está sendo gerado. Ele aparecerá automaticamente quando pronto.",
       });
 
       setFormData({
@@ -241,22 +243,21 @@ export default function Editor() {
         error.message?.includes("aborted");
 
       if (isTimeout) {
-        console.log("⚠️ Timeout detectado no handleSubmit - ignorando, job continua");
+        console.log("⚠️ Timeout/cancelamento detectado - IGNORANDO (job continua no backend)");
         // NÃO remover job temporário
         // NÃO mostrar erro
-        // Apenas iniciar polling global
-        startGlobalPolling();
+        // Polling global já foi iniciado acima
         
         toast({
           title: "Vídeo em processamento",
-          description: "Seu vídeo está sendo gerado. Aguarde, ele aparecerá automaticamente.",
+          description: "Seu vídeo está sendo gerado. Ele aparecerá automaticamente quando pronto.",
         });
         
         return; // Sair sem remover job ou mostrar erro
       }
 
-      // Apenas para erros REAIS (não timeout):
-      console.error("❌ ERRO REAL (não timeout):", error);
+      // Apenas para erros REAIS (4xx, 5xx do backend):
+      console.error("❌ ERRO REAL da API:", error);
       setJobs(prev => prev.filter(j => j.job_id !== tempId));
       
       toast({
