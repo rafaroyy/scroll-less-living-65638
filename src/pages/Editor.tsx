@@ -283,8 +283,8 @@ export default function Editor() {
       setJobs((prev) => prev.filter((j) => j.job_id !== tempId));
 
       toast({
-        title: "O vídeo será gerado em alguns segundos",
-        description: error?.message || "Tente novamente",
+        title: "O vídeo sendo gerado!",
+        description: "Aguarde cerca de 1 minuto e estará na aba de conclúidos.",
         variant: "default",
       });
 
@@ -584,9 +584,7 @@ export default function Editor() {
                         />
                       </div>
 
-                      <p className="text-xs text-muted-foreground">
-                        Isso pode levar alguns minutos. Falta pouco!
-                      </p>
+                      <p className="text-xs text-muted-foreground">Isso pode levar alguns minutos. Falta pouco!</p>
                     </div>
                   )}
 
