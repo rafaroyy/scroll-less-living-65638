@@ -32,6 +32,7 @@ export default function Editor() {
   const [showProgressBar, setShowProgressBar] = useState(false);
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const MONTHLY_LIMIT = 15;
+  const [uploadedVideos, setUploadedVideos] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     objetivo: "",
     tema: "",
@@ -288,6 +289,7 @@ export default function Editor() {
         cenas: 5,
         aspect_ratio: "9:16",
       });
+      setUploadedVideos([]);
       setLoading(false);
     } catch (error: any) {
       // ✅ PATCH 3: distinguir timeout/cancelamento de erro real
@@ -580,6 +582,48 @@ export default function Editor() {
                       disabled={loading}
                     />
                   </div>
+                </div>
+
+                {/* Upload de vídeos do usuário */}
+                <div className="space-y-2">
+                  <Label htmlFor="user_videos">Vídeos Personalizados (Opcional)</Label>
+                  <Input
+                    id="user_videos"
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/x-msvideo"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      setUploadedVideos(files);
+                    }}
+                    disabled={loading}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Faça upload dos seus próprios vídeos. Se não enviar, usaremos vídeos de banco de imagens.
+                  </p>
+                  
+                  {/* Preview dos arquivos selecionados */}
+                  {uploadedVideos.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-sm font-medium text-foreground">
+                        {uploadedVideos.length} vídeo{uploadedVideos.length > 1 ? 's' : ''} selecionado{uploadedVideos.length > 1 ? 's' : ''}:
+                      </p>
+                      <div className="space-y-1">
+                        {uploadedVideos.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-md text-xs"
+                          >
+                            <span className="truncate flex-1 text-foreground">{file.name}</span>
+                            <span className="text-muted-foreground ml-2">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-4">
