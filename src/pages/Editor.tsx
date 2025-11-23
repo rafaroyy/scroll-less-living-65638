@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { videoService } from "@/integrations/supabase/videoService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, LogOut, Video, Download, Trash2, Settings } from "lucide-react";
+import { Loader2, LogOut, Video, Download, Trash2, Settings, Upload, X, Film } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -585,40 +585,108 @@ export default function Editor() {
                 </div>
 
                 {/* Upload de vídeos do usuário */}
-                <div className="space-y-2">
-                  <Label htmlFor="user_videos">Vídeos Personalizados (Opcional)</Label>
-                  <Input
-                    id="user_videos"
-                    type="file"
-                    accept="video/mp4,video/quicktime,video/x-msvideo"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      setUploadedVideos(files);
-                    }}
-                    disabled={loading}
-                    className="cursor-pointer"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Faça upload dos seus próprios vídeos. Se não enviar, usaremos vídeos de banco de imagens.
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Film className="w-4 h-4 text-primary" />
+                      Vídeos Personalizados
+                      <span className="text-xs font-normal text-muted-foreground">(Opcional)</span>
+                    </Label>
+                    {uploadedVideos.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setUploadedVideos([])}
+                        className="h-7 text-xs"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Limpar todos
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Área de upload estilizada */}
+                  <div className="relative">
+                    <label
+                      htmlFor="user_videos"
+                      className={`
+                        flex flex-col items-center justify-center w-full h-32 
+                        border-2 border-dashed rounded-lg cursor-pointer 
+                        transition-all duration-200
+                        ${uploadedVideos.length > 0 
+                          ? 'border-primary bg-primary/5 hover:bg-primary/10' 
+                          : 'border-muted-foreground/25 bg-muted/20 hover:bg-muted/40 hover:border-muted-foreground/50'
+                        }
+                        ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                      `}
+                    >
+                      <div className="flex flex-col items-center justify-center gap-2 text-center px-4">
+                        <Upload className={`w-8 h-8 ${uploadedVideos.length > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {uploadedVideos.length > 0 
+                              ? `${uploadedVideos.length} vídeo${uploadedVideos.length > 1 ? 's' : ''} selecionado${uploadedVideos.length > 1 ? 's' : ''}`
+                              : 'Clique para enviar vídeos'
+                            }
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            MP4, MOV ou AVI • Múltiplos arquivos aceitos
+                          </p>
+                        </div>
+                      </div>
+                      <Input
+                        id="user_videos"
+                        type="file"
+                        accept="video/mp4,video/quicktime,video/x-msvideo"
+                        multiple
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setUploadedVideos(files);
+                        }}
+                        disabled={loading}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    💡 <strong>Dica:</strong> Envie seus próprios vídeos para personalizar completamente seu conteúdo. 
+                    Se não enviar, usaremos vídeos profissionais do nosso banco de imagens.
                   </p>
                   
-                  {/* Preview dos arquivos selecionados */}
+                  {/* Lista de arquivos com opção de remover individualmente */}
                   {uploadedVideos.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      <p className="text-sm font-medium text-foreground">
-                        {uploadedVideos.length} vídeo{uploadedVideos.length > 1 ? 's' : ''} selecionado{uploadedVideos.length > 1 ? 's' : ''}:
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Arquivos selecionados
                       </p>
-                      <div className="space-y-1">
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
                         {uploadedVideos.map((file, index) => (
                           <div
                             key={index}
-                            className="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-md text-xs"
+                            className="flex items-center gap-3 bg-card border border-border px-3 py-2.5 rounded-lg hover:shadow-sm transition-shadow"
                           >
-                            <span className="truncate flex-1 text-foreground">{file.name}</span>
-                            <span className="text-muted-foreground ml-2">
-                              {(file.size / 1024 / 1024).toFixed(2)} MB
-                            </span>
+                            <Film className="w-4 h-4 text-primary flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setUploadedVideos(prev => prev.filter((_, i) => i !== index));
+                              }}
+                              className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
                           </div>
                         ))}
                       </div>
