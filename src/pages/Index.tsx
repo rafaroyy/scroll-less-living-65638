@@ -8,6 +8,7 @@ import { CallToAction } from "@/components/CallToAction";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
+import { MarketplaceSection } from "@/components/MarketplaceSection";
 const Index = () => {
   const [activeSection, setActiveSection] = useState("home");
   useEffect(() => {
@@ -78,6 +79,7 @@ const Index = () => {
       <div id="testimonials">
         
       </div>
+      <MarketplaceSection />
       <CallToAction />
       <Footer />
     </div>;
