@@ -739,7 +739,7 @@ export default function Editor() {
                     </div>
                   )}
 
-                  {processingJobs.length > 0 && !isGenerating && (
+                   {processingJobs.length > 0 && !isGenerating && (
                     <div className="text-sm text-muted-foreground text-center mt-2 space-y-1">
                       <p>Seu vídeo está sendo gerado! Isso pode levar até 2 minutos.</p>
                       <p>Você verá ele sair de "Processando" e aparecer em "Meus vídeos" automaticamente.</p>
@@ -747,6 +747,21 @@ export default function Editor() {
                   )}
                 </div>
               </form>
+
+              {/* Marketplace CTA */}
+              <div className="mt-6 p-4 border border-border rounded-lg bg-card/50">
+                <p className="text-sm text-muted-foreground mb-3 text-center">
+                  Quer mais ferramentas e produtos exclusivos para crescer no digital?
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => window.open("https://marketplace.digitalzeducacao.com", "_blank")}
+                >
+                  Ver Marketplace
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
