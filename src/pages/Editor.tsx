@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { videoService } from "@/integrations/supabase/videoService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, LogOut, Video, Download, Trash2, Settings, Upload, X, Film } from "lucide-react";
+import { Loader2, LogOut, Video, Download, Trash2, Settings, Upload, X, Film, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -748,18 +748,23 @@ export default function Editor() {
                 </div>
               </form>
 
-              {/* Marketplace CTA */}
-              <div className="mt-6 p-4 border border-border rounded-lg bg-card/50">
-                <p className="text-sm text-muted-foreground mb-3 text-center">
-                  Quer mais ferramentas e produtos exclusivos para crescer no digital?
+              {/* Marketplace CTA - Enhanced */}
+              <div className="mt-8 p-6 border-2 border-primary/20 rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 shadow-md">
+                <div className="flex items-center justify-center mb-3">
+                  <ShoppingBag className="w-6 h-6 text-primary mr-2" />
+                  <h3 className="text-lg font-semibold text-foreground">Marketplace Digitalz</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4 text-center">
+                  Produtos exclusivos para acelerar seus resultados com IA e Marketing Digital
                 </p>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="default"
+                  size="lg"
                   className="w-full"
                   onClick={() => window.open("https://marketplace.digitalzeducacao.com", "_blank")}
                 >
-                  Ver Marketplace
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Abrir Marketplace
                 </Button>
               </div>
             </CardContent>
