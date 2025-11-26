@@ -39,7 +39,7 @@ export const Header = ({ activeSection = "home" }: HeaderProps) => {
     { name: "Início", href: "/", sectionId: "home" },
     { name: "Nossa História", href: "/our-story" },
     { name: "Como Funciona", href: "/#features", onClick: handleFeaturesClick, sectionId: "how-it-works" },
-    { name: "Blog", href: "/blog" },
+    { name: "DigitalZ", href: "https://marketplace.digitalzeducacao.com", external: true },
     { name: "Baixar App", href: "/download-app" },
   ];
 
@@ -70,7 +70,22 @@ export const Header = ({ activeSection = "home" }: HeaderProps) => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navLinks.map((link, index) => (
-              link.href.startsWith('/') && !link.href.includes('#') ? (
+              link.external ? (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`transition-all duration-300 font-medium font-poppins hover:scale-105 ${
+                    isScrolled 
+                      ? "text-brand-dark hover:text-brand-primary" 
+                      : "text-white hover:text-brand-secondary drop-shadow-md"
+                  }`}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  {link.name}
+                </a>
+              ) : link.href.startsWith('/') && !link.href.includes('#') ? (
                 <Link
                   key={link.name}
                   to={link.href}
@@ -136,7 +151,18 @@ export const Header = ({ activeSection = "home" }: HeaderProps) => {
           <div className="md:hidden mt-4 pb-4 bg-white rounded-lg shadow-lg border border-gray-200 animate-[fade-in_0.3s_ease-out]">
             <nav className="flex flex-col space-y-4 pt-4">
               {navLinks.map((link) => (
-                link.href.startsWith('/') && !link.href.includes('#') ? (
+                link.external ? (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 text-gray-600 hover:text-brand-primary transition-colors duration-200 font-medium font-poppins"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </a>
+                ) : link.href.startsWith('/') && !link.href.includes('#') ? (
                   <Link
                     key={link.name}
                     to={link.href}
