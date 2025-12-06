@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +43,9 @@ export default function Editor() {
     duracao: 30,
     cenas: 5,
     aspect_ratio: "9:16",
+    tipoRoteiro: "educativo-com-prova-social",
+    roteiroSugerido: "",
+    bulletPointsRoteiro: "",
   });
 
   const { toast } = useToast();
@@ -259,7 +263,7 @@ export default function Editor() {
 
     try {
       console.log("📡 ENVIANDO REQUEST para /videos/render (timeout é esperado)");
-      const result = await videoService.renderVideo(formData);
+      const result = await videoService.renderVideo(formData, uploadedVideos.length > 0 ? uploadedVideos : undefined);
       console.log("✅ POST enviado (job iniciado no backend)");
 
       // Se for timeout, mostrar mensagem amigável
@@ -288,6 +292,9 @@ export default function Editor() {
         duracao: 30,
         cenas: 5,
         aspect_ratio: "9:16",
+        tipoRoteiro: "educativo-com-prova-social",
+        roteiroSugerido: "",
+        bulletPointsRoteiro: "",
       });
       setUploadedVideos([]);
       setLoading(false);
@@ -692,6 +699,60 @@ export default function Editor() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Seção de Roteiro */}
+                <div className="space-y-4 pt-4 border-t border-border">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    📝 Configuração do Roteiro
+                  </h3>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tipoRoteiro">Tipo de Roteiro</Label>
+                    <Select
+                      value={formData.tipoRoteiro}
+                      onValueChange={(value) => setFormData({ ...formData, tipoRoteiro: value })}
+                      disabled={loading}
+                    >
+                      <SelectTrigger id="tipoRoteiro">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="educativo-com-prova-social">Educativo com prova social</SelectItem>
+                        <SelectItem value="historia-pessoal">História pessoal</SelectItem>
+                        <SelectItem value="review-produto">Review de produto</SelectItem>
+                        <SelectItem value="checklist-3-passos">Checklist em 3 passos</SelectItem>
+                        <SelectItem value="bastidores-estrategia">Bastidores / estratégia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="roteiroSugerido">Sugestão de Roteiro</Label>
+                    <Textarea
+                      id="roteiroSugerido"
+                      placeholder="Explique em texto livre a linha geral do roteiro que você quer, ganchos, provas, etc."
+                      value={formData.roteiroSugerido}
+                      onChange={(e) => setFormData({ ...formData, roteiroSugerido: e.target.value })}
+                      disabled={loading}
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bulletPointsRoteiro">Pontos Principais (um por linha)</Label>
+                    <Textarea
+                      id="bulletPointsRoteiro"
+                      placeholder="- Ponto 1 que a IA deve respeitar&#10;- Ponto 2 obrigatório&#10;- Ponto 3 importante"
+                      value={formData.bulletPointsRoteiro}
+                      onChange={(e) => setFormData({ ...formData, bulletPointsRoteiro: e.target.value })}
+                      disabled={loading}
+                      rows={4}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Cada linha será um ponto obrigatório que a IA deve respeitar no roteiro.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="pt-4">

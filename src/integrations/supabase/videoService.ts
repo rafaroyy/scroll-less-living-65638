@@ -10,6 +10,9 @@ interface VideoRequest {
   duracao?: number;
   cenas?: number;
   aspect_ratio?: string;
+  tipoRoteiro?: string;
+  roteiroSugerido?: string;
+  bulletPointsRoteiro?: string;
 }
 
 interface JobResponse {
@@ -37,11 +40,62 @@ interface VideoListItem {
   updated_at?: string;
 }
 
+// Função para mapear proporção para o formato esperado pelo backend
+const mapearProporcao = (proporcao: string): string => {
+  const mapa: Record<string, string> = {
+    "9:16": "9:16",
+    "16:9": "16:9",
+    "1:1": "1:1",
+  };
+  return mapa[proporcao] || "9:16";
+};
+
 export const videoService = {
-  renderVideo: async (params: VideoRequest): Promise<{ started: boolean; timeout?: boolean }> => {
+  renderVideo: async (params: VideoRequest, files?: File[]): Promise<{ started: boolean; timeout?: boolean }> => {
     try {
-      console.log("🎬 INICIANDO renderVideo (sem esperar resposta completa)");
-      await apiClient.post("/videos/render", params);
+      console.log("🎬 INICIANDO renderVideo com FormData");
+
+      // Montar payload estruturado
+      const payload = {
+        objetivo_video: params.objetivo,
+        tema: params.tema,
+        nicho: params.nicho,
+        palavra_chave_global: params.palavra_chave_global,
+        idioma: params.idioma || "pt-BR",
+        duracao: Number(params.duracao || 30),
+        cenas: Number(params.cenas || 5),
+        tipo_roteiro: params.tipoRoteiro || "educativo-com-prova-social",
+        roteiro_sugerido_usuario: params.roteiroSugerido || "",
+        bullet_points_roteiro: (params.bulletPointsRoteiro || "")
+          .split("\n")
+          .map(line => line.trim())
+          .filter(line => line.length > 0),
+        metadata: {
+          duration: Number(params.duracao || 30),
+          cenas: Number(params.cenas || 5),
+          aspect_ratio: mapearProporcao(params.aspect_ratio || "9:16"),
+        },
+      };
+
+      // Criar FormData
+      const formData = new FormData();
+      formData.append("payload", JSON.stringify(payload));
+
+      // Adicionar arquivos se existirem
+      if (files && files.length > 0) {
+        files.forEach((file) => {
+          formData.append("files", file);
+        });
+      }
+
+      console.log("📦 Payload:", payload);
+      console.log("📁 Arquivos:", files?.length || 0);
+
+      await apiClient.post("/videos/render", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return { started: true };
     } catch (error: any) {
       // Timeout e cancelamento são ESPERADOS - backend continua processando
