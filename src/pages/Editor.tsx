@@ -480,125 +480,141 @@ export default function Editor() {
               <CardDescription>Preencha os campos abaixo para gerar seu vídeo viral com IA</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isGenerating}>
-                <div className="space-y-2">
-                  <Label htmlFor="objetivo">Objetivo *</Label>
-                  <Input
-                    id="objetivo"
-                    placeholder="Ex: Vender curso online"
-                    value={formData.objetivo}
-                    onChange={(e) => setFormData({ ...formData, objetivo: e.target.value })}
-                    disabled={loading}
-                  />
-                </div>
+              <form onSubmit={handleSubmit} className="space-y-6" aria-busy={isGenerating}>
+                {/* Seção: Informações Principais */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-primary flex items-center gap-2 pb-2 border-b border-border">
+                    🎯 Informações Principais
+                  </h3>
+                  
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="objetivo">Objetivo *</Label>
+                      <Input
+                        id="objetivo"
+                        placeholder="Ex: Vender curso online"
+                        value={formData.objetivo}
+                        onChange={(e) => setFormData({ ...formData, objetivo: e.target.value })}
+                        disabled={loading}
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tema">Tema *</Label>
-                  <Input
-                    id="tema"
-                    placeholder="Ex: Produtividade"
-                    value={formData.tema}
-                    onChange={(e) => setFormData({ ...formData, tema: e.target.value })}
-                    disabled={loading}
-                  />
-                </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="tema">Tema *</Label>
+                        <Input
+                          id="tema"
+                          placeholder="Ex: Produtividade"
+                          value={formData.tema}
+                          onChange={(e) => setFormData({ ...formData, tema: e.target.value })}
+                          disabled={loading}
+                        />
+                      </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="nicho">Nicho *</Label>
-                  <Input
-                    id="nicho"
-                    placeholder="Ex: Empreendedorismo digital"
-                    value={formData.nicho}
-                    onChange={(e) => setFormData({ ...formData, nicho: e.target.value })}
-                    disabled={loading}
-                  />
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="nicho">Nicho *</Label>
+                        <Input
+                          id="nicho"
+                          placeholder="Ex: Empreendedorismo digital"
+                          value={formData.nicho}
+                          onChange={(e) => setFormData({ ...formData, nicho: e.target.value })}
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="palavra_chave_global">Palavra-chave Global *</Label>
-                  <Input
-                    id="palavra_chave_global"
-                    placeholder="Ex: productivity"
-                    value={formData.palavra_chave_global}
-                    onChange={(e) => setFormData({ ...formData, palavra_chave_global: e.target.value })}
-                    disabled={loading}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="idioma">Idioma</Label>
-                    <Select
-                      value={formData.idioma}
-                      onValueChange={(value) => setFormData({ ...formData, idioma: value })}
-                      disabled={loading}
-                    >
-                      <SelectTrigger id="idioma">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pt-BR">Português (BR)</SelectItem>
-                        <SelectItem value="en-US">English (US)</SelectItem>
-                        <SelectItem value="es-ES">Español</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="aspect_ratio">Proporção</Label>
-                    <Select
-                      value={formData.aspect_ratio}
-                      onValueChange={(value) => setFormData({ ...formData, aspect_ratio: value })}
-                      disabled={loading}
-                    >
-                      <SelectTrigger id="aspect_ratio">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="9:16">9:16 (Vertical)</SelectItem>
-                        <SelectItem value="16:9">16:9 (Horizontal)</SelectItem>
-                        <SelectItem value="1:1">1:1 (Quadrado)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Label htmlFor="palavra_chave_global">Palavra-chave Global *</Label>
+                      <Input
+                        id="palavra_chave_global"
+                        placeholder="Ex: productivity"
+                        value={formData.palavra_chave_global}
+                        onChange={(e) => setFormData({ ...formData, palavra_chave_global: e.target.value })}
+                        disabled={loading}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="duracao">Duração (segundos)</Label>
-                    <Input
-                      id="duracao"
-                      type="number"
-                      min="10"
-                      max="120"
-                      value={formData.duracao}
-                      onChange={(e) => setFormData({ ...formData, duracao: parseInt(e.target.value) })}
-                      disabled={loading}
-                    />
-                  </div>
+                {/* Seção: Configurações do Vídeo */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-primary flex items-center gap-2 pb-2 border-b border-border">
+                    ⚙️ Configurações do Vídeo
+                  </h3>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="cenas">Número de Cenas</Label>
-                    <Input
-                      id="cenas"
-                      type="number"
-                      min="3"
-                      max="15"
-                      value={formData.cenas}
-                      onChange={(e) => setFormData({ ...formData, cenas: parseInt(e.target.value) })}
-                      disabled={loading}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="idioma">Idioma</Label>
+                      <Select
+                        value={formData.idioma}
+                        onValueChange={(value) => setFormData({ ...formData, idioma: value })}
+                        disabled={loading}
+                      >
+                        <SelectTrigger id="idioma">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pt-BR">Português (BR)</SelectItem>
+                          <SelectItem value="en-US">English (US)</SelectItem>
+                          <SelectItem value="es-ES">Español</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aspect_ratio">Proporção</Label>
+                      <Select
+                        value={formData.aspect_ratio}
+                        onValueChange={(value) => setFormData({ ...formData, aspect_ratio: value })}
+                        disabled={loading}
+                      >
+                        <SelectTrigger id="aspect_ratio">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="9:16">9:16 (Vertical)</SelectItem>
+                          <SelectItem value="16:9">16:9 (Horizontal)</SelectItem>
+                          <SelectItem value="1:1">1:1 (Quadrado)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="duracao">Duração (seg)</Label>
+                      <Input
+                        id="duracao"
+                        type="number"
+                        min="10"
+                        max="120"
+                        value={formData.duracao}
+                        onChange={(e) => setFormData({ ...formData, duracao: parseInt(e.target.value) })}
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cenas">Nº de Cenas</Label>
+                      <Input
+                        id="cenas"
+                        type="number"
+                        min="3"
+                        max="15"
+                        value={formData.cenas}
+                        onChange={(e) => setFormData({ ...formData, cenas: parseInt(e.target.value) })}
+                        disabled={loading}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Upload de vídeos do usuário */}
+                {/* Seção: Vídeos Personalizados */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-base font-semibold flex items-center gap-2">
-                      <Film className="w-4 h-4 text-primary" />
+                  <div className="flex items-center justify-between pb-2 border-b border-border">
+                    <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                      <Film className="w-4 h-4" />
                       Vídeos Personalizados
                       <span className="text-xs font-normal text-muted-foreground">(Opcional)</span>
-                    </Label>
+                    </h3>
                     {uploadedVideos.length > 0 && (
                       <Button
                         type="button"
@@ -608,102 +624,80 @@ export default function Editor() {
                         className="h-7 text-xs"
                       >
                         <X className="w-3 h-3 mr-1" />
-                        Limpar todos
+                        Limpar
                       </Button>
                     )}
                   </div>
 
-                  {/* Área de upload estilizada */}
-                  <div className="relative">
-                    <label
-                      htmlFor="user_videos"
-                      className={`
-                        flex flex-col items-center justify-center w-full h-32 
-                        border-2 border-dashed rounded-lg cursor-pointer 
-                        transition-all duration-200
-                        ${uploadedVideos.length > 0 
-                          ? 'border-primary bg-primary/5 hover:bg-primary/10' 
-                          : 'border-muted-foreground/25 bg-muted/20 hover:bg-muted/40 hover:border-muted-foreground/50'
-                        }
-                        ${loading ? 'opacity-50 cursor-not-allowed' : ''}
-                      `}
-                    >
-                      <div className="flex flex-col items-center justify-center gap-2 text-center px-4">
-                        <Upload className={`w-8 h-8 ${uploadedVideos.length > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {uploadedVideos.length > 0 
-                              ? `${uploadedVideos.length} vídeo${uploadedVideos.length > 1 ? 's' : ''} selecionado${uploadedVideos.length > 1 ? 's' : ''}`
-                              : 'Clique para enviar vídeos'
-                            }
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            MP4, MOV ou AVI • Múltiplos arquivos aceitos
-                          </p>
-                        </div>
+                  <label
+                    htmlFor="user_videos"
+                    className={`
+                      flex flex-col items-center justify-center w-full h-24
+                      border-2 border-dashed rounded-lg cursor-pointer 
+                      transition-all duration-200
+                      ${uploadedVideos.length > 0 
+                        ? 'border-primary bg-primary/5 hover:bg-primary/10' 
+                        : 'border-muted-foreground/25 bg-muted/20 hover:bg-muted/40 hover:border-muted-foreground/50'
+                      }
+                      ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                    `}
+                  >
+                    <div className="flex items-center gap-3 text-center px-4">
+                      <Upload className={`w-6 h-6 ${uploadedVideos.length > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-foreground">
+                          {uploadedVideos.length > 0 
+                            ? `${uploadedVideos.length} vídeo${uploadedVideos.length > 1 ? 's' : ''} selecionado${uploadedVideos.length > 1 ? 's' : ''}`
+                            : 'Clique para enviar vídeos'
+                          }
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          MP4, MOV ou AVI
+                        </p>
                       </div>
-                      <Input
-                        id="user_videos"
-                        type="file"
-                        accept="video/mp4,video/quicktime,video/x-msvideo"
-                        multiple
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          setUploadedVideos(files);
-                        }}
-                        disabled={loading}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
+                    </div>
+                    <Input
+                      id="user_videos"
+                      type="file"
+                      accept="video/mp4,video/quicktime,video/x-msvideo"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        setUploadedVideos(files);
+                      }}
+                      disabled={loading}
+                      className="hidden"
+                    />
+                  </label>
 
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    💡 <strong>Dica:</strong> Envie seus próprios vídeos para personalizar completamente seu conteúdo. 
-                    Se não enviar, usaremos vídeos profissionais do nosso banco de imagens.
-                  </p>
-                  
-                  {/* Lista de arquivos com opção de remover individualmente */}
                   {uploadedVideos.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Arquivos selecionados
-                      </p>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {uploadedVideos.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-3 bg-card border border-border px-3 py-2.5 rounded-lg hover:shadow-sm transition-shadow"
+                    <div className="space-y-1.5 max-h-28 overflow-y-auto">
+                      {uploadedVideos.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 bg-card border border-border px-2.5 py-1.5 rounded-md text-sm"
+                        >
+                          <Film className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <span className="flex-1 truncate text-foreground">{file.name}</span>
+                          <span className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setUploadedVideos(prev => prev.filter((_, i) => i !== index))}
+                            className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
                           >
-                            <Film className="w-4 h-4 text-primary flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">
-                                {file.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {(file.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setUploadedVideos(prev => prev.filter((_, i) => i !== index));
-                              }}
-                              className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* Seção de Roteiro */}
-                <div className="space-y-4 pt-4 border-t border-border">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                {/* Seção: Roteiro */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-primary flex items-center gap-2 pb-2 border-b border-border">
                     📝 Configuração do Roteiro
                   </h3>
 
@@ -731,26 +725,28 @@ export default function Editor() {
                     <Label htmlFor="roteiroSugerido">Sugestão de Roteiro</Label>
                     <Textarea
                       id="roteiroSugerido"
-                      placeholder="Explique em texto livre a linha geral do roteiro que você quer, ganchos, provas, etc."
+                      placeholder="Explique a linha geral do roteiro, ganchos, provas, etc."
                       value={formData.roteiroSugerido}
                       onChange={(e) => setFormData({ ...formData, roteiroSugerido: e.target.value })}
                       disabled={loading}
-                      rows={4}
+                      rows={3}
+                      className="resize-none"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="bulletPointsRoteiro">Pontos Principais (um por linha)</Label>
+                    <Label htmlFor="bulletPointsRoteiro">Pontos Principais</Label>
                     <Textarea
                       id="bulletPointsRoteiro"
-                      placeholder="- Ponto 1 que a IA deve respeitar&#10;- Ponto 2 obrigatório&#10;- Ponto 3 importante"
+                      placeholder="- Ponto 1&#10;- Ponto 2&#10;- Ponto 3"
                       value={formData.bulletPointsRoteiro}
                       onChange={(e) => setFormData({ ...formData, bulletPointsRoteiro: e.target.value })}
                       disabled={loading}
-                      rows={4}
+                      rows={3}
+                      className="resize-none"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Cada linha será um ponto obrigatório que a IA deve respeitar no roteiro.
+                      Um ponto por linha. A IA respeitará cada item.
                     </p>
                   </div>
                 </div>
