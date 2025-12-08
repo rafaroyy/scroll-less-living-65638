@@ -585,11 +585,12 @@ export default function Editor() {
                         id="duracao"
                         type="number"
                         min="10"
-                        max="120"
+                        max="31"
                         value={formData.duracao}
-                        onChange={(e) => setFormData({ ...formData, duracao: parseInt(e.target.value) })}
+                        onChange={(e) => setFormData({ ...formData, duracao: Math.min(31, parseInt(e.target.value) || 10) })}
                         disabled={loading}
                       />
+                      <p className="text-xs text-muted-foreground">Máx: 31 segundos</p>
                     </div>
 
                     <div className="space-y-2">
