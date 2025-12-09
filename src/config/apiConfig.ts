@@ -2,7 +2,7 @@
  * Configuração central da API
  * Todas as requisições devem usar esta URL
  */
-export const API_URL = "http://178.156.217.149:8443";
+export const API_URL = "https://api.viralizeia.com";
 
 // Logs para debug (remover em produção se necessário)
 console.log("API Configuration:", {
