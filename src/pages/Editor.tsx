@@ -768,11 +768,21 @@ export default function Editor() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="educativo-com-prova-social">Educativo com prova social</SelectItem>
-                        <SelectItem value="historia-pessoal">História pessoal</SelectItem>
-                        <SelectItem value="review-produto">Review de produto</SelectItem>
-                        <SelectItem value="checklist-3-passos">Checklist em 3 passos</SelectItem>
-                        <SelectItem value="bastidores-estrategia">Bastidores / estratégia</SelectItem>
+                        <SelectItem value="educativo-com-prova-social">📚 Educativo com prova social</SelectItem>
+                        <SelectItem value="historia-pessoal">📖 História pessoal</SelectItem>
+                        <SelectItem value="review-produto">⭐ Review de produto</SelectItem>
+                        <SelectItem value="checklist-3-passos">✅ Checklist em 3 passos</SelectItem>
+                        <SelectItem value="bastidores-estrategia">🎬 Bastidores / estratégia</SelectItem>
+                        <SelectItem value="controversia-opiniao">🔥 Controvérsia / opinião forte</SelectItem>
+                        <SelectItem value="antes-depois">🔄 Antes e depois</SelectItem>
+                        <SelectItem value="mito-vs-verdade">❌ Mito vs Verdade</SelectItem>
+                        <SelectItem value="erro-comum">⚠️ Erro comum que você comete</SelectItem>
+                        <SelectItem value="segredo-revelado">🤫 Segredo revelado</SelectItem>
+                        <SelectItem value="tutorial-rapido">⚡ Tutorial rápido</SelectItem>
+                        <SelectItem value="storytelling-emocional">💔 Storytelling emocional</SelectItem>
+                        <SelectItem value="lista-top">🏆 Lista / Top X</SelectItem>
+                        <SelectItem value="desafio-trend">🎯 Desafio / Trend</SelectItem>
+                        <SelectItem value="curiosidade-chocante">😱 Curiosidade chocante</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
