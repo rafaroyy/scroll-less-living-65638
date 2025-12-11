@@ -13,6 +13,7 @@ interface VideoRequest {
   tipoRoteiro?: string;
   roteiroSugerido?: string;
   bulletPointsRoteiro?: string;
+  usarLegendaEFala?: boolean;
 }
 
 interface JobResponse {
@@ -55,6 +56,9 @@ export const videoService = {
     try {
       console.log("🎬 INICIANDO renderVideo com FormData");
 
+      // Calcular valor de usar_legenda_e_fala (default: true)
+      const usarLegendaEFala = params.usarLegendaEFala ?? true;
+
       // Montar payload estruturado
       const payload = {
         objetivo_video: params.objetivo,
@@ -70,10 +74,12 @@ export const videoService = {
           .split("\n")
           .map(line => line.trim())
           .filter(line => line.length > 0),
+        usar_legenda_e_fala: usarLegendaEFala,
         metadata: {
           duration: Number(params.duracao || 30),
           cenas: Number(params.cenas || 5),
           aspect_ratio: mapearProporcao(params.aspect_ratio || "9:16"),
+          usar_legenda_e_fala: usarLegendaEFala,
         },
       };
 

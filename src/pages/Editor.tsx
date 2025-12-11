@@ -46,6 +46,7 @@ export default function Editor() {
     tipoRoteiro: "educativo-com-prova-social",
     roteiroSugerido: "",
     bulletPointsRoteiro: "",
+    usarLegendaEFala: true,
   });
 
   const { toast } = useToast();
@@ -86,7 +87,7 @@ export default function Editor() {
       return;
     }
 
-    const TOTAL_DURATION = 300000; // 300s (5 minutos)
+    const TOTAL_DURATION = 120000; // 120s (2 minutos)
     const INTERVAL = 100; // atualiza a cada 100ms
     let elapsed = 0;
 
@@ -295,6 +296,7 @@ export default function Editor() {
         tipoRoteiro: "educativo-com-prova-social",
         roteiroSugerido: "",
         bulletPointsRoteiro: "",
+        usarLegendaEFala: true,
       });
       setUploadedVideos([]);
       setLoading(false);
@@ -536,6 +538,44 @@ export default function Editor() {
                   </div>
                 </div>
 
+                {/* Seção: Modo do Vídeo */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-primary flex items-center gap-2 pb-2 border-b border-border">
+                    🎬 Modo do Vídeo
+                  </h3>
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    Escolha se o vídeo terá narração de IA com legendas ou se será um vídeo mudo com frases fortes no centro da tela.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, usarLegendaEFala: true })}
+                      disabled={loading}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        formData.usarLegendaEFala
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-muted-foreground"
+                      } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    >
+                      <p className="text-sm font-medium text-foreground">🎙️ Com narração + legenda</p>
+                      <p className="text-xs text-muted-foreground mt-1">IA narra o texto e exibe legendas</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, usarLegendaEFala: false })}
+                      disabled={loading}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        !formData.usarLegendaEFala
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-muted-foreground"
+                      } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    >
+                      <p className="text-sm font-medium text-foreground">🔇 Mudo com texto central</p>
+                      <p className="text-xs text-muted-foreground mt-1">Frases fortes no centro sem áudio</p>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Seção: Configurações do Vídeo */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-primary flex items-center gap-2 pb-2 border-b border-border">
@@ -586,8 +626,23 @@ export default function Editor() {
                         type="number"
                         min="10"
                         max="31"
-                        value={formData.duracao}
-                        onChange={(e) => setFormData({ ...formData, duracao: Math.min(31, parseInt(e.target.value) || 10) })}
+                        value={formData.duracao === 0 ? "" : formData.duracao}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") {
+                            setFormData({ ...formData, duracao: 0 });
+                          } else {
+                            const num = parseInt(val, 10);
+                            if (!isNaN(num)) {
+                              setFormData({ ...formData, duracao: Math.min(31, Math.max(0, num)) });
+                            }
+                          }
+                        }}
+                        onBlur={() => {
+                          if (formData.duracao < 10) {
+                            setFormData({ ...formData, duracao: 10 });
+                          }
+                        }}
                         disabled={loading}
                       />
                       <p className="text-xs text-muted-foreground">Máx: 31 segundos</p>
@@ -793,7 +848,7 @@ export default function Editor() {
                         />
                       </div>
 
-                      <p className="text-xs text-muted-foreground">Tempo estimado: ~5 minutos</p>
+                      <p className="text-xs text-muted-foreground">Tempo estimado: ~2 minutos</p>
                     </div>
                   )}
 
