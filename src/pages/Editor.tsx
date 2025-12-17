@@ -142,19 +142,9 @@ export default function Editor() {
         }),
       );
 
-      // Atualiza jobs: mantém temporários até aparecerem reais
-      setJobs((prev) => {
-        // 1. pegar temporários
-        const temps = prev.filter((j) => j.temp);
-
-        // 2. remover temporários SOMENTE quando o vídeo real já existe
-        const tempsStillValid = temps.filter((temp) => !detailedJobs.some((real) => real.job_id === temp.job_id));
-
-        console.log("📋 Temporários mantidos:", tempsStillValid.length, "| Jobs do backend:", detailedJobs.length);
-
-        // 3. resultado final
-        return [...tempsStillValid, ...detailedJobs];
-      });
+      // Atualiza jobs diretamente do backend
+      setJobs(detailedJobs);
+      console.log("📋 Jobs carregados do backend:", detailedJobs.length);
 
       // Calcular uso mensal
       const currentMonth = new Date().getMonth();
@@ -243,23 +233,7 @@ export default function Editor() {
     setShowProgressBar(true);
     setFakeProgress(0);
 
-    // Criar job temporário IMEDIATAMENTE (sem depender de job_id do POST)
-    const tempId = `temp-${Date.now()}`;
-    console.log("➕ CRIANDO JOB TEMPORÁRIO:", tempId);
-
-    setJobs((prev) => [
-      {
-        job_id: tempId,
-        status: "processing",
-        progress: null,
-        message: "Iniciando geração do vídeo...",
-        created_at: new Date().toISOString(),
-        temp: true,
-      },
-      ...prev,
-    ]);
-
-    // Iniciar polling global IMEDIATAMENTE
+    // Iniciar polling global IMEDIATAMENTE para detectar novos vídeos
     startGlobalPolling();
 
     try {
@@ -316,9 +290,6 @@ export default function Editor() {
       }
 
       console.error("❌ ERRO REAL NO HANDLESUBMIT:", error);
-
-      // ERRO REAL: remove o temporário e sinaliza erro
-      setJobs((prev) => prev.filter((j) => j.job_id !== tempId));
 
       toast({
         title: "O vídeo sendo gerado!",
