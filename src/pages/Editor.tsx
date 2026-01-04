@@ -596,7 +596,7 @@ export default function Editor() {
                         id="duracao"
                         type="number"
                         min="10"
-                        max="31"
+                        max="60"
                         value={formData.duracao === 0 ? "" : formData.duracao}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -605,7 +605,7 @@ export default function Editor() {
                           } else {
                             const num = parseInt(val, 10);
                             if (!isNaN(num)) {
-                              setFormData({ ...formData, duracao: Math.min(31, Math.max(0, num)) });
+                              setFormData({ ...formData, duracao: Math.min(60, Math.max(0, num)) });
                             }
                           }
                         }}
@@ -616,7 +616,7 @@ export default function Editor() {
                         }}
                         disabled={loading}
                       />
-                      <p className="text-xs text-muted-foreground">Máx: 31 segundos</p>
+                      <p className="text-xs text-muted-foreground">Máx: 60 segundos</p>
                     </div>
 
                     <div className="space-y-2">
