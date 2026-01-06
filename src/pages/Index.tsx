@@ -52,7 +52,7 @@ const Index = () => {
     "operatingSystem": "Web, iOS, Android",
     "offers": {
       "@type": "Offer",
-      "price": "97",
+      "price": "147",
       "priceCurrency": "BRL"
     },
     "aggregateRating": {

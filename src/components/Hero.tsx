@@ -45,7 +45,7 @@ export const Hero = () => {
             label: "Views Orgânicos",
             delay: "0s"
           }, {
-            number: "R$97",
+            number: "R$147",
             label: "Por Mês",
             delay: "0.2s"
           }, {
@@ -116,7 +116,7 @@ export const Hero = () => {
                   label: "Views Orgânicos",
                   delay: "0s"
                 }, {
-                  number: "R$97",
+                  number: "R$147",
                   label: "Por Mês",
                   delay: "0.2s"
                 }, {

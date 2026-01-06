@@ -32,7 +32,7 @@ export const CallToAction = () => {
             <span className="bg-gradient-to-r from-brand-primary via-blue-400 to-brand-secondary bg-clip-text text-transparent"> criativo milionário</span>
           </h2>
           
-          <p className={`text-xl text-brand-light mb-8 leading-relaxed font-poppins font-light transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>Assine por R$97/mês e tenha acesso ao cérebro de quem vive de vídeos virais.</p>
+          <p className={`text-xl text-brand-light mb-8 leading-relaxed font-poppins font-light transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>Assine por R$147/mês e tenha acesso ao cérebro de quem vive de vídeos virais.</p>
           
           <div className={`flex justify-center items-center mb-12 transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95'}`}>
             <Link to="/auth">
